@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MedBridge — Telemedicine Triage &amp; Patient Booking Hub</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to main content</a>
+
+    <div class="emergency-strip" role="region" aria-label="Emergency notice">
+      <div class="container emergency-strip__inner">
+        <span>Experiencing chest pain, severe breathing trouble, or stroke symptoms? Call 911 / 112 immediately.</span>
+        <span class="badge badge--emergency">24/7 Safety Screening</span>
+      </div>
+    </div>
+
+    <header class="site-header">
+      <div class="container header-bar">
+        <div class="brand">
+          <div class="brand__mark" aria-hidden="true">+</div>
+          <div>
+            <h1 class="brand__title">MedBridge Telemedicine Hub</h1>
+            <p class="brand__subtitle">Clinical Red-Flag Triage &amp; Same-Day Patient Booking</p>
+          </div>
+        </div>
+
+        <ol class="stepper" aria-label="Booking workflow steps">
+          <li id="step-1" class="stepper__item is-current">
+            <span class="stepper__num">1</span>
+            <span>Triage</span>
+          </li>
+          <li id="step-2" class="stepper__item">
+            <span class="stepper__num">2</span>
+            <span>Urgency</span>
+          </li>
+          <li id="step-3" class="stepper__item">
+            <span class="stepper__num">3</span>
+            <span>Book Slot</span>
+          </li>
+        </ol>
+      </div>
+    </header>
+
+    <main id="main-content" class="workspace">
+      <div class="container workspace-grid">
+        <!-- Left 7-Column Primary Workflow -->
+        <div class="primary-column">
+          <!-- Step 1: Triage Assessment Form -->
+          <section class="card" aria-labelledby="triage-heading">
+            <div class="card__header">
+              <div>
+                <h2 id="triage-heading" class="card__title">1. Clinical Triage Assessment</h2>
+                <p class="card__desc">
+                  Answer a brief symptom check so we can screen for emergency red flags and match you to the right clinician.
+                </p>
+              </div>
+              <span class="badge badge--accent">Step 1 of 3</span>
+            </div>
+
+            <div id="triage-error" class="alert alert--error hidden" role="alert" aria-live="assertive"></div>
+
+            <form id="triage-form" class="form-stack" novalidate>
+              <!-- Patient Basics -->
+              <div class="form-grid form-grid--3col">
+                <div class="field">
+                  <label class="field__label" for="patientName">
+                    <span>Full Name <span class="field__required" aria-hidden="true">*</span></span>
+                  </label>
+                  <input
+                    id="patientName"
+                    name="patientName"
+                    type="text"
+                    class="form-control"
+                    placeholder="e.g. Amina Yusuf"
+                    autocomplete="name"
+                    required
+                  />
+                </div>
+
+                <div class="field">
+                  <label class="field__label" for="age">
+                    <span>Age (yrs) <span class="field__required" aria-hidden="true">*</span></span>
+                  </label>
+                  <input
+                    id="age"
+                    name="age"
+                    type="number"
+                    min="0"
+                    max="120"
+                    class="form-control"
+                    placeholder="32"
+                    required
+                  />
+                </div>
+
+                <div class="field">
+                  <label class="field__label" for="temperature">
+                    <span>Temp (°C)</span>
+                    <span class="field__hint">Optional</span>
+                  </label>
+                  <input
+                    id="temperature"
+                    name="temperature"
+                    type="number"
+                    step="0.1"
+                    min="30"
+                    max="45"
+                    class="form-control"
+                    placeholder="37.2"
+                  />
+                </div>
+              </div>
+
+              <!-- Red-Flag Safety Checklist -->
+              <fieldset class="fieldset fieldset--emergency">
+                <legend class="fieldset__legend">Emergency Red-Flag Screening</legend>
+                <p class="fieldset__hint">
+                  Check any symptom occurring right now. Selecting any item triggers immediate ER escalation.
+                </p>
+                <div class="option-grid option-grid--2col">
+                  <label class="selectable-card selectable-card--danger">
+                    <input type="checkbox" name="redFlags" value="chest_pain" />
+                    <span>Chest pain, pressure, or tightness</span>
+                  </label>
+                  <label class="selectable-card selectable-card--danger">
+                    <input type="checkbox" name="redFlags" value="shortness_of_breath" />
+                    <span>Severe shortness of breath or gasping</span>
+                  </label>
+                  <label class="selectable-card selectable-card--danger">
+                    <input type="checkbox" name="redFlags" value="stroke_signs" />
+                    <span>Facial drooping, arm weakness, or slurred speech</span>
+                  </label>
+                  <label class="selectable-card selectable-card--danger">
+                    <input type="checkbox" name="redFlags" value="uncontrolled_bleeding" />
+                    <span>Severe or uncontrolled bleeding</span>
+                  </label>
+                  <label class="selectable-card selectable-card--danger">
+                    <input type="checkbox" name="redFlags" value="altered_consciousness" />
+                    <span>Fainting, severe confusion, or unresponsiveness</span>
+                  </label>
+                  <label class="selectable-card selectable-card--danger">
+                    <input type="checkbox" name="redFlags" value="anaphylaxis" />
+                    <span>Swelling of lips, tongue, or throat</span>
+                  </label>
+                </div>
+              </fieldset>
+
+              <!-- Primary Symptom & Severity -->
+              <div class="form-grid form-grid--2col">
+                <div class="field">
+                  <label class="field__label" for="symptomCategory">
+                    <span>Primary Symptom Category <span class="field__required" aria-hidden="true">*</span></span>
+                  </label>
+                  <select id="symptomCategory" name="symptomCategory" class="form-control" required>
+                    <option value="">Select primary concern...</option>
+                    <option value="fever_infection">Fever, Chills, or Suspected Infection</option>
+                    <option value="respiratory">Cough, Sore Throat, or Mild Wheezing</option>
+                    <option value="cardiovascular_mild">Palpitations or Lightheadedness</option>
+                    <option value="neurological">Headache, Migraine, or Dizziness</option>
+                    <option value="gastrointestinal">Nausea, Vomiting, or Abdominal Discomfort</option>
+                    <option value="mental_health">Anxiety, Stress, or Sleep Disturbance</option>
+                    <option value="musculoskeletal">Joint Pain, Backache, or Minor Sprain</option>
+                    <option value="dermatological">Skin Rash, Hives (Mild), or Irritation</option>
+                    <option value="general_followup">Prescription Refill or Routine Follow-Up</option>
+                  </select>
+                </div>
+
+                <div class="field">
+                  <label class="field__label" for="severity">
+                    <span>Pain / Discomfort Severity</span>
+                    <span id="severity-badge" class="badge badge--standard">4 / 10 — Moderate</span>
+                  </label>
+                  <div class="severity-box">
+                    <input
+                      id="severity"
+                      name="severity"
+                      type="range"
+                      min="1"
+                      max="10"
+                      value="4"
+                      class="severity-slider"
+                      aria-describedby="severity-scale-hint"
+                    />
+                    <div id="severity-scale-hint" class="severity-scale">
+                      <span>1 (Mild)</span>
+                      <span>5 (Moderate)</span>
+                      <span>10 (Severe)</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Duration -->
+              <fieldset class="fieldset">
+                <legend class="fieldset__legend">How long have these symptoms lasted?</legend>
+                <div class="option-grid option-grid--compact">
+                  <label class="selectable-card">
+                    <input type="radio" name="duration" value="sudden_hours" checked />
+                    <span>&lt; 24 hours (Sudden)</span>
+                  </label>
+                  <label class="selectable-card">
+                    <input type="radio" name="duration" value="days_1_3" />
+                    <span>1 to 3 days</span>
+                  </label>
+                  <label class="selectable-card">
+                    <input type="radio" name="duration" value="days_4_7" />
+                    <span>4 to 7 days</span>
+                  </label>
+                  <label class="selectable-card">
+                    <input type="radio" name="duration" value="chronic_over_week" />
+                    <span>More than 7 days</span>
+                  </label>
+                </div>
+              </fieldset>
+
+              <!-- Clinical Risk Factors -->
+              <fieldset class="fieldset">
+                <legend class="fieldset__legend">Clinical Risk Factors (Optional)</legend>
+                <div class="option-grid option-grid--2col">
+                  <label class="selectable-card">
+                    <input type="checkbox" name="riskFactors" value="immunocompromised" />
+                    <span>Immunocompromised</span>
+                  </label>
+                  <label class="selectable-card">
+                    <input type="checkbox" name="riskFactors" value="pregnancy" />
+                    <span>Currently pregnant</span>
+                  </label>
+                  <label class="selectable-card">
+                    <input type="checkbox" name="riskFactors" value="chronic_heart_lung" />
+                    <span>Chronic heart or lung disease</span>
+                  </label>
+                  <label class="selectable-card">
+                    <input type="checkbox" name="riskFactors" value="diabetes" />
+                    <span>Diabetes</span>
+                  </label>
+                </div>
+              </fieldset>
+
+              <!-- Additional Notes -->
+              <div class="field">
+                <label class="field__label" for="notes">
+                  <span>Additional Symptom Details</span>
+                  <span class="field__hint">Scanned automatically for safety keywords</span>
+                </label>
+                <textarea
+                  id="notes"
+                  name="notes"
+                  class="form-control"
+                  placeholder="Describe onset, medications taken, or any other relevant context..."
+                ></textarea>
+              </div>
+
+              <div class="btn-row">
+                <button id="triage-submit-btn" type="submit" class="btn btn-primary">
+                  Run Clinical Triage
+                </button>
+                <button id="triage-reset-btn" type="button" class="btn btn-secondary">
+                  Reset Assessment
+                </button>
+              </div>
+            </form>
+          </section>
+
+          <!-- Step 3: Clinician Slot Selection & Booking -->
+          <section id="booking-section" class="card" aria-labelledby="booking-heading">
+            <div class="card__header">
+              <div>
+                <h2 id="booking-heading" class="card__title">2. Select Clinician &amp; Consultation Slot</h2>
+                <p id="booking-subtitle" class="card__desc">
+                  Complete Step 1 triage first to unlock priority slot recommendations and booking.
+                </p>
+              </div>
+              <span id="booking-step-badge" class="badge badge--neutral">Awaiting Triage</span>
+            </div>
+
+            <div id="booking-locked-banner" class="alert alert--routine" role="status">
+              <p class="alert__title">Triage required before booking</p>
+              <p>Submit your symptom assessment above to match with Urgent Care, General Practice, or Specialist slots.</p>
+            </div>
+
+            <div id="booking-emergency-banner" class="alert alert--emergency hidden" role="alert">
+              <p class="alert__title">Routine Telehealth Booking Disabled</p>
+              <p>
+                Because emergency red-flag symptoms were detected, online slot booking is intentionally locked for your safety.
+                Please call <strong>911 / 112</strong> or go to the nearest emergency room immediately.
+              </p>
+            </div>
+
+            <div id="booking-controls" class="hidden">
+              <!-- Modality Filter Tabs -->
+              <div class="filter-tabs" role="tablist" aria-label="Filter by consultation modality">
+                <button type="button" class="filter-tab" role="tab" data-modality="all" aria-selected="true">
+                  All Modalities
+                </button>
+                <button type="button" class="filter-tab" role="tab" data-modality="video" aria-selected="false">
+                  Video Visit
+                </button>
+                <button type="button" class="filter-tab" role="tab" data-modality="audio" aria-selected="false">
+                  Audio Call
+                </button>
+                <button type="button" class="filter-tab" role="tab" data-modality="chat" aria-selected="false">
+                  Clinical Chat
+                </button>
+              </div>
+
+              <!-- Dynamic Slot Cards Grid -->
+              <div id="slots-grid" class="slots-grid" aria-live="polite"></div>
+
+              <!-- Booking Contact Confirmation Form -->
+              <div id="booking-error" class="alert alert--error hidden" role="alert" aria-live="assertive"></div>
+
+              <form id="booking-form" class="form-stack" novalidate>
+                <div class="form-grid form-grid--2col">
+                  <div class="field">
+                    <label class="field__label" for="patientEmail">
+                      <span>Confirmation Email <span class="field__required" aria-hidden="true">*</span></span>
+                    </label>
+                    <input
+                      id="patientEmail"
+                      name="patientEmail"
+                      type="email"
+                      class="form-control"
+                      placeholder="patient@example.com"
+                      autocomplete="email"
+                      required
+                    />
+                  </div>
+
+                  <div class="field">
+                    <label class="field__label" for="patientPhone">
+                      <span>Mobile Number <span class="field__required" aria-hidden="true">*</span></span>
+                    </label>
+                    <input
+                      id="patientPhone"
+                      name="patientPhone"
+                      type="tel"
+                      class="form-control"
+                      placeholder="+234 800 000 0000"
+                      autocomplete="tel"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div class="btn-row">
+                  <button id="confirm-booking-btn" type="submit" class="btn btn-primary" disabled>
+                    Confirm Consultation Slot
+                  </button>
+                  <span id="selected-slot-hint" class="field__hint">Select an available slot above to enable booking.</span>
+                </div>
+              </form>
+            </div>
+          </section>
+        </div>
+
+        <!-- Right 5-Column Sticky Assessment & Booking Receipt Sidebar -->
+        <aside class="sidebar-column" aria-label="Triage outcome and booking receipt">
+          <!-- Triage Assessment Card -->
+          <section class="card" aria-labelledby="result-heading">
+            <div class="card__header">
+              <div>
+                <h2 id="result-heading" class="card__title">Triage Outcome</h2>
+                <p class="card__desc">Real-time urgency tier &amp; clinical scoring breakdown</p>
+              </div>
+              <span id="result-tier-badge" class="badge badge--neutral">Pending</span>
+            </div>
+
+            <!-- Empty Pre-Triage Guide -->
+            <div id="triage-empty-state">
+              <p class="card__desc">
+                Our deterministic triage engine screens for immediate red flags first, then weights symptom category,
+                severity, onset duration, fever, age, and comorbidities on a 0–100 urgency scale.
+              </p>
+              <ul class="tier-guide">
+                <li class="tier-guide__item">
+                  <span class="badge badge--emergency">Emergency</span>
+                  <span>Red flag or 85–100 pts (ER)</span>
+                </li>
+                <li class="tier-guide__item">
+                  <span class="badge badge--urgent">Urgent</span>
+                  <span>55–84 pts (&lt; 2 hrs telehealth)</span>
+                </li>
+                <li class="tier-guide__item">
+                  <span class="badge badge--standard">Standard</span>
+                  <span>30–54 pts (Within 24 hrs)</span>
+                </li>
+                <li class="tier-guide__item">
+                  <span class="badge badge--routine">Routine</span>
+                  <span>0–29 pts (24–48 hrs)</span>
+                </li>
+              </ul>
+            </div>
+
+            <!-- Populated Triage Result -->
+            <div id="triage-result-panel" class="hidden" aria-live="polite">
+              <div id="triage-alert-box" class="alert">
+                <p id="triage-action-title" class="alert__title"></p>
+                <p id="triage-action-body"></p>
+              </div>
+
+              <div class="score-meter">
+                <div class="score-meter__row">
+                  <span class="field__label">Urgency Score</span>
+                  <span id="triage-score-value" class="score-meter__value">0 / 100</span>
+                </div>
+                <div class="score-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="triage-score-bar">
+                  <div id="triage-score-fill" class="score-bar__fill" style="width: 0%"></div>
+                </div>
+                <p id="triage-window-text" class="field__hint" style="margin-top: 8px;"></p>
+                <p id="triage-specialty-text" class="field__hint" style="margin-top: 4px;"></p>
+              </div>
+
+              <h3 class="field__label" style="margin: 16px 0 0;">Clinical Scoring Breakdown</h3>
+              <ul id="triage-factors-list" class="factor-list"></ul>
+            </div>
+          </section>
+
+          <!-- Confirmed Booking Receipt Card -->
+          <section id="receipt-card" class="card hidden" aria-labelledby="receipt-heading" aria-live="polite">
+            <div class="card__header">
+              <div>
+                <h2 id="receipt-heading" class="card__title">Appointment Confirmed</h2>
+                <p class="card__desc">Your consultation details and telehealth room link</p>
+              </div>
+              <span class="badge badge--standard">Confirmed</span>
+            </div>
+
+            <div id="receipt-details" class="receipt-grid"></div>
+
+            <div class="btn-row" style="margin-top: 16px;">
+              <button id="cancel-booking-btn" type="button" class="btn btn-danger">
+                Cancel Appointment
+              </button>
+            </div>
+          </section>
+        </aside>
+      </div>
+    </main>
+
+    <!-- UI/UX Engineering Specimen Reference (8pt Grid, 60-30-10, WCAG AA, 5 States) -->
+    <section class="specimen-section" aria-label="UI/UX Design System Specimen">
+      <div class="container">
+        <details class="specimen-details">
+          <summary class="specimen-summary">
+            <span>UI/UX Design System Audit — 8pt Grid, 60-30-10 Palette &amp; 5 Component States</span>
+            <span class="badge badge--neutral">Expand Audit</span>
+          </summary>
+          <div class="specimen-content">
+            <div>
+              <h3 class="field__label" style="margin-bottom: 8px;">60-30-10 Color Architecture (WCAG AA Verified)</h3>
+              <div class="swatch-grid">
+                <div class="swatch">
+                  <div class="swatch__color" style="background: #F8FAFC; color: #0F172A;">60% #F8FAFC / #FFFFFF</div>
+                  <div class="swatch__info">Dominant Neutral Canvas &amp; Surfaces — #0F172A ink (17.85:1)</div>
+                </div>
+                <div class="swatch">
+                  <div class="swatch__color" style="background: #0F2942; color: #FFFFFF;">30% #0F2942 / #F1F5F9</div>
+                  <div class="swatch__info">Secondary Structural Header, Sidebars &amp; Borders (14.83:1)</div>
+                </div>
+                <div class="swatch">
+                  <div class="swatch__color" style="background: #0F766E; color: #FFFFFF;">10% #0F766E</div>
+                  <div class="swatch__info">Primary Clinical Teal CTA &amp; Active Indicators (5.47:1)</div>
+                </div>
+                <div class="swatch">
+                  <div class="swatch__color" style="background: #B91C1C; color: #FFFFFF;">Red-Flag #B91C1C</div>
+                  <div class="swatch__info">Emergency Escalation Semantic Badge (6.47:1)</div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h3 class="field__label" style="margin-bottom: 8px;">5 Interactive Component States Reference</h3>
+              <div class="state-matrix">
+                <div class="state-cell">
+                  <span class="state-cell__label">1. Default</span>
+                  <button type="button" class="btn btn-primary" tabindex="-1">Book Slot</button>
+                  <input type="text" class="form-control" value="Default input" readonly tabindex="-1" aria-label="Default input preview" />
+                </div>
+                <div class="state-cell">
+                  <span class="state-cell__label">2. Hover</span>
+                  <button type="button" class="btn btn-primary is-hover" tabindex="-1">Book Slot</button>
+                  <input type="text" class="form-control is-hover" value="Hover input" readonly tabindex="-1" aria-label="Hover input preview" />
+                </div>
+                <div class="state-cell">
+                  <span class="state-cell__label">3. Focus (5.93:1 Ring)</span>
+                  <button type="button" class="btn btn-primary is-focus" tabindex="-1">Book Slot</button>
+                  <input type="text" class="form-control is-focus" value="Focus input" readonly tabindex="-1" aria-label="Focus input preview" />
+                </div>
+                <div class="state-cell">
+                  <span class="state-cell__label">4. Active / Pressed</span>
+                  <button type="button" class="btn btn-primary is-active" tabindex="-1">Book Slot</button>
+                  <input type="text" class="form-control is-active" value="Active input" readonly tabindex="-1" aria-label="Active input preview" />
+                </div>
+                <div class="state-cell">
+                  <span class="state-cell__label">5. Disabled</span>
+                  <button type="button" class="btn btn-primary" disabled>Slot Full</button>
+                  <input type="text" class="form-control" value="Disabled input" disabled aria-label="Disabled input preview" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <footer class="site-footer">
+      <div class="container">
+        <strong>MedBridge Telemedicine Hub</strong> — Built for SDL Module 02 (8pt Spatial Grid, 60-30-10 Color System, WCAG AA Contrast). Prototype only; not a substitute for professional medical care.
+      </div>
+    </footer>
+
+    <script src="app.js" defer></script>
+  </body>
+</html>
