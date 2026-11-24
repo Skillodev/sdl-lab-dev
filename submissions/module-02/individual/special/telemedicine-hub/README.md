@@ -17,7 +17,7 @@ telemedicine-hub/
 ├── public/
 │   ├── index.html        # Semantic, accessible triage form & booking UI
 │   ├── styles.css        # 8pt grid, 60-30-10 color tokens, WCAG AA, 5 states
-│   └── app.js            # Triage submission, slot filtering & booking flow
+│   └── app.js            # Triage submission, slot selection & clinic queue
 ├── src/
 │   ├── triageEngine.js   # RED / YELLOW / GREEN red-flag & urgency logic
 │   └── server.js         # Express REST API & consultation booking endpoints
@@ -28,7 +28,7 @@ telemedicine-hub/
 
 ### Clinical Triage Pathway (`RED` / `YELLOW` / `GREEN`)
 
-1. **`RED` (Emergency):** Triggered when any symptom or clinical note matches `chest pain`, `difficulty breathing`, `severe bleeding`, `unconscious`, or `stroke`. Sets `allowOnlineBooking: false`, blocks routine slot booking, and directs the patient to immediate in-person emergency care.
+1. **`RED` (Emergency):** Triggered when any symptom matches `chest pain`, `difficulty breathing`, `severe bleeding`, `unconscious`, or `stroke`. Sets `allowOnlineBooking: false`, locks online booking, and directs the patient to immediate in-person emergency care.
 2. **`YELLOW` (Urgent):** Triggered when symptoms match `high fever`, `persistent vomiting`, `severe headache`, `migraine`, or `infection`. Sets `allowOnlineBooking: true` and highlights priority teleconsultation slots within 2 hours.
 3. **`GREEN` (Routine):** Assigned when no RED or YELLOW flags are present. Sets `allowOnlineBooking: true` for standard appointment booking.
 
@@ -52,14 +52,11 @@ Open `http://localhost:3000` in your browser.
 
 ## 3. REST API Reference
 
-| Method | Endpoint | Description |
+| Method | Endpoint | Request / Response |
 | :--- | :--- | :--- |
-| `GET` | `/api/health` | Service health status and server timestamp |
-| `POST` | `/api/triage` | Evaluates `{ patientName, age, symptoms, notes }` and returns `{ triageId, priority, action, allowOnlineBooking }` |
-| `GET` | `/api/slots` | Lists consultation slots; supports `?priority=YELLOW\|GREEN`, `?modality=video\|audio\|chat`, `?specialty=` |
-| `POST` | `/api/bookings` | Books an available slot linked to a `YELLOW`/`GREEN` `triageId`; blocks `RED` (`400`) and double-bookings (`409`) |
-| `GET` | `/api/bookings` | Lists all active confirmed bookings |
-| `DELETE` | `/api/bookings/:id` | Cancels a booking and restores the clinician slot to available |
+| `POST` | `/api/triage` | Body: `{ patientName, symptoms[] }` → Returns `{ patientName, priority, action, allowOnlineBooking }` |
+| `POST` | `/api/bookings` | Body: `{ patientName, phone, priority, slot }` → Returns `201 { message, booking }` |
+| `GET` | `/api/bookings` | Returns `{ total, bookings[] }` (live clinic queue) |
 
 ---
 

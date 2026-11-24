@@ -53,7 +53,7 @@
               <div>
                 <h2 id="triage-heading" class="card__title">1. Clinical Symptom Triage</h2>
                 <p class="card__desc">
-                  Select your current symptoms or describe them below to determine your priority level (RED, YELLOW, or GREEN).
+                  Enter your name and select or describe your symptoms to determine your priority level (RED, YELLOW, or GREEN).
                 </p>
               </div>
               <span class="badge badge--accent">Step 1 of 3</span>
@@ -62,45 +62,27 @@
             <div id="triage-error" class="alert alert--error hidden" role="alert" aria-live="assertive"></div>
 
             <form id="triage-form" class="form-stack" novalidate>
-              <!-- Patient Basics -->
-              <div class="form-grid form-grid--2col">
-                <div class="field">
-                  <label class="field__label" for="patientName">
-                    <span>Full Name <span class="field__required" aria-hidden="true">*</span></span>
-                  </label>
-                  <input
-                    id="patientName"
-                    name="patientName"
-                    type="text"
-                    class="form-control"
-                    placeholder="e.g. Amina Yusuf"
-                    autocomplete="name"
-                    required
-                  />
-                </div>
-
-                <div class="field">
-                  <label class="field__label" for="age">
-                    <span>Age (yrs) <span class="field__required" aria-hidden="true">*</span></span>
-                  </label>
-                  <input
-                    id="age"
-                    name="age"
-                    type="number"
-                    min="0"
-                    max="120"
-                    class="form-control"
-                    placeholder="32"
-                    required
-                  />
-                </div>
+              <!-- Patient Name -->
+              <div class="field">
+                <label class="field__label" for="patientName">
+                  <span>Patient Full Name <span class="field__required" aria-hidden="true">*</span></span>
+                </label>
+                <input
+                  id="patientName"
+                  name="patientName"
+                  type="text"
+                  class="form-control"
+                  placeholder="e.g. Amina Yusuf"
+                  autocomplete="name"
+                  required
+                />
               </div>
 
               <!-- RED Flags Checklist -->
               <fieldset class="fieldset fieldset--emergency">
                 <legend class="fieldset__legend">RED Priority — Emergency Red-Flag Symptoms</legend>
                 <p class="fieldset__hint">
-                  Any match blocks routine online booking and directs you to immediate in-person emergency care.
+                  Any match disables online booking and directs you to immediate in-person emergency care.
                 </p>
                 <div class="option-grid option-grid--2col">
                   <label class="selectable-card selectable-card--danger">
@@ -179,17 +161,17 @@
                 </div>
               </fieldset>
 
-              <!-- Additional Notes (also evaluated by triageEngine) -->
+              <!-- Additional Symptoms / Notes -->
               <div class="field">
                 <label class="field__label" for="notes">
-                  <span>Other Symptoms / Clinical Notes</span>
-                  <span class="field__hint">Automatically scanned for RED &amp; YELLOW flags</span>
+                  <span>Other Symptoms (Optional)</span>
+                  <span class="field__hint">Included in symptoms[] sent to /api/triage</span>
                 </label>
                 <textarea
                   id="notes"
                   name="notes"
                   class="form-control"
-                  placeholder="Describe any additional symptoms (e.g., high fever since last night, mild allergy)..."
+                  placeholder="Describe any additional symptoms (e.g., high fever, migraine, mild allergy)..."
                 ></textarea>
               </div>
 
@@ -210,7 +192,7 @@
               <div>
                 <h2 id="booking-heading" class="card__title">2. Select Clinician &amp; Consultation Slot</h2>
                 <p id="booking-subtitle" class="card__desc">
-                  Complete Step 1 triage first to unlock priority slot recommendations and booking.
+                  Complete Step 1 triage first to unlock slot selection and appointment confirmation.
                 </p>
               </div>
               <span id="booking-step-badge" class="badge badge--neutral">Awaiting Triage</span>
@@ -246,43 +228,26 @@
                 </button>
               </div>
 
-              <!-- Dynamic Slot Cards Grid -->
+              <!-- Consultation Slot Cards Grid -->
               <div id="slots-grid" class="slots-grid" aria-live="polite"></div>
 
-              <!-- Booking Contact Confirmation Form -->
+              <!-- Booking Confirmation Form -->
               <div id="booking-error" class="alert alert--error hidden" role="alert" aria-live="assertive"></div>
 
               <form id="booking-form" class="form-stack" novalidate>
-                <div class="form-grid form-grid--2col">
-                  <div class="field">
-                    <label class="field__label" for="patientEmail">
-                      <span>Confirmation Email <span class="field__required" aria-hidden="true">*</span></span>
-                    </label>
-                    <input
-                      id="patientEmail"
-                      name="patientEmail"
-                      type="email"
-                      class="form-control"
-                      placeholder="patient@example.com"
-                      autocomplete="email"
-                      required
-                    />
-                  </div>
-
-                  <div class="field">
-                    <label class="field__label" for="patientPhone">
-                      <span>Mobile Number <span class="field__required" aria-hidden="true">*</span></span>
-                    </label>
-                    <input
-                      id="patientPhone"
-                      name="patientPhone"
-                      type="tel"
-                      class="form-control"
-                      placeholder="+234 800 000 0000"
-                      autocomplete="tel"
-                      required
-                    />
-                  </div>
+                <div class="field">
+                  <label class="field__label" for="patientPhone">
+                    <span>Contact Phone Number <span class="field__required" aria-hidden="true">*</span></span>
+                  </label>
+                  <input
+                    id="patientPhone"
+                    name="phone"
+                    type="tel"
+                    class="form-control"
+                    placeholder="+234 800 000 0000"
+                    autocomplete="tel"
+                    required
+                  />
                 </div>
 
                 <div class="btn-row">
@@ -296,19 +261,18 @@
           </section>
         </div>
 
-        <!-- Right 5-Column Sticky Assessment & Booking Receipt Sidebar -->
-        <aside class="sidebar-column" aria-label="Triage outcome and booking receipt">
+        <!-- Right 5-Column Sticky Assessment, Receipt & Live Clinic Queue -->
+        <aside class="sidebar-column" aria-label="Triage outcome and clinic queue">
           <!-- Triage Outcome Card -->
           <section class="card" aria-labelledby="result-heading">
             <div class="card__header">
               <div>
                 <h2 id="result-heading" class="card__title">Triage Outcome</h2>
-                <p class="card__desc">Real-time RED / YELLOW / GREEN priority classification</p>
+                <p class="card__desc">Real-time RED / YELLOW / GREEN priority result</p>
               </div>
               <span id="result-tier-badge" class="badge badge--neutral">Pending</span>
             </div>
 
-            <!-- Empty Pre-Triage Guide -->
             <div id="triage-empty-state">
               <p class="card__desc">
                 Symptoms are screened against RED emergency flags first, then YELLOW urgent flags, before assigning GREEN routine care.
@@ -329,7 +293,6 @@
               </ul>
             </div>
 
-            <!-- Populated Triage Result -->
             <div id="triage-result-panel" class="hidden" aria-live="polite">
               <div id="triage-alert-box" class="alert">
                 <p id="triage-action-title" class="alert__title"></p>
@@ -354,24 +317,34 @@
             <div class="card__header">
               <div>
                 <h2 id="receipt-heading" class="card__title">Appointment Confirmed</h2>
-                <p class="card__desc">Your consultation details and telehealth room link</p>
+                <p class="card__desc">Latest confirmed patient booking</p>
               </div>
               <span class="badge badge--standard">Confirmed</span>
             </div>
-
             <div id="receipt-details" class="receipt-grid"></div>
+          </section>
 
-            <div class="btn-row" style="margin-top: 16px;">
-              <button id="cancel-booking-btn" type="button" class="btn btn-danger">
-                Cancel Appointment
-              </button>
+          <!-- Live Clinic Queue (GET /api/bookings) -->
+          <section class="card" aria-labelledby="queue-heading">
+            <div class="card__header">
+              <div>
+                <h2 id="queue-heading" class="card__title">Clinic Booking Queue</h2>
+                <p class="card__desc">Live bookings from <code>GET /api/bookings</code></p>
+              </div>
+              <span id="queue-count-badge" class="badge badge--neutral">0 Booked</span>
             </div>
+            <ul id="queue-list" class="factor-list">
+              <li class="factor-list__item">
+                <span>No appointments booked yet.</span>
+                <span class="factor-list__impact">—</span>
+              </li>
+            </ul>
           </section>
         </aside>
       </div>
     </main>
 
-    <!-- UI/UX Engineering Specimen Reference (8pt Grid, 60-30-10, WCAG AA, 5 States) -->
+    <!-- UI/UX Engineering Specimen Reference -->
     <section class="specimen-section" aria-label="UI/UX Design System Specimen">
       <div class="container">
         <details class="specimen-details">
