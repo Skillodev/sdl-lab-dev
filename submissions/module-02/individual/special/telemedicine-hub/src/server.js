@@ -5,13 +5,7 @@
 const path = require('path');
 const crypto = require('crypto');
 const express = require('express');
-const {
-  RED_FLAGS,
-  SYMPTOM_CATEGORIES,
-  DURATION_WEIGHTS,
-  RISK_FACTORS,
-  evaluateTriage
-} = require('./triageEngine');
+const { evaluateTriage } = require('./triageEngine');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -19,7 +13,7 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
-// In-memory clinical state store (sufficient for local triage & booking prototype)
+// In-memory store for triage assessments and bookings
 const triageAssessments = new Map();
 const bookings = new Map();
 
@@ -43,18 +37,18 @@ function buildInitialSlots() {
       date: todayStr,
       time: 'In 25 mins',
       modality: 'video',
-      urgencyMatch: ['URGENT', 'STANDARD'],
+      priorityMatch: ['YELLOW'],
       booked: false
     },
     {
       id: 'slot-02',
       clinician: 'Dr. Samuel Adeyemi, MD',
       specialty: 'Internal Medicine',
-      credentials: 'Cardiopulmonary & Internal Medicine',
+      credentials: 'Acute & Internal Medicine',
       date: todayStr,
       time: 'In 50 mins',
       modality: 'video',
-      urgencyMatch: ['URGENT', 'STANDARD'],
+      priorityMatch: ['YELLOW', 'GREEN'],
       booked: false
     },
     {
@@ -65,8 +59,8 @@ function buildInitialSlots() {
       date: todayStr,
       time: 'Today, 2:30 PM',
       modality: 'audio',
-      urgencyMatch: ['URGENT', 'STANDARD'],
-      booked: true // Pre-booked slot to demonstrate unavailable/disabled UI state
+      priorityMatch: ['YELLOW'],
+      booked: true // Pre-booked slot demonstrating Disabled UI state
     },
     {
       id: 'slot-04',
@@ -76,29 +70,29 @@ function buildInitialSlots() {
       date: todayStr,
       time: 'Today, 4:00 PM',
       modality: 'video',
-      urgencyMatch: ['STANDARD', 'ROUTINE'],
+      priorityMatch: ['GREEN', 'YELLOW'],
       booked: false
     },
     {
       id: 'slot-05',
-      clinician: 'Dr. Marcus Vance, PsyD',
-      specialty: 'Behavioral Health',
-      credentials: 'Clinical Tele-Psychology',
+      clinician: 'Dr. Marcus Vance, MD',
+      specialty: 'Family Medicine',
+      credentials: 'Telehealth Primary Care',
       date: todayStr,
       time: 'Today, 5:15 PM',
       modality: 'audio',
-      urgencyMatch: ['STANDARD', 'ROUTINE'],
+      priorityMatch: ['GREEN'],
       booked: false
     },
     {
       id: 'slot-06',
       clinician: 'Dr. Hannah Mensah, MD',
-      specialty: 'Dermatology',
-      credentials: 'Teledermatology Specialist',
+      specialty: 'Dermatology & General Care',
+      credentials: 'Telemedicine Clinician',
       date: tomorrowStr,
       time: 'Tomorrow, 9:30 AM',
       modality: 'chat',
-      urgencyMatch: ['STANDARD', 'ROUTINE'],
+      priorityMatch: ['GREEN'],
       booked: false
     },
     {
@@ -109,7 +103,7 @@ function buildInitialSlots() {
       date: tomorrowStr,
       time: 'Tomorrow, 11:00 AM',
       modality: 'chat',
-      urgencyMatch: ['ROUTINE', 'STANDARD'],
+      priorityMatch: ['GREEN'],
       booked: false
     },
     {
@@ -120,7 +114,7 @@ function buildInitialSlots() {
       date: tomorrowStr,
       time: 'Tomorrow, 1:30 PM',
       modality: 'video',
-      urgencyMatch: ['STANDARD', 'ROUTINE'],
+      priorityMatch: ['GREEN', 'YELLOW'],
       booked: false
     }
   ];
@@ -141,40 +135,58 @@ app.get('/api/health', (_req, res) => {
   });
 });
 
-// Triage reference metadata
-app.get('/api/triage/metadata', (_req, res) => {
-  res.json({
-    redFlags: RED_FLAGS,
-    symptomCategories: SYMPTOM_CATEGORIES,
-    durations: DURATION_WEIGHTS,
-    riskFactors: RISK_FACTORS
-  });
-});
-
-// Evaluate patient symptoms and return urgency triage report
+// Evaluate patient symptoms using RED / YELLOW / GREEN triage logic
 app.post('/api/triage', (req, res) => {
-  try {
-    const assessment = evaluateTriage(req.body);
-    const triageId = createId('TRG');
-    const record = { triageId, ...assessment };
-    triageAssessments.set(triageId, record);
-    return res.status(201).json(record);
-  } catch (err) {
-    const status = err.statusCode || 500;
-    return res.status(status).json({
-      error: err.message || 'Unable to process triage assessment.',
-      details: err.details || []
+  const { patientName, age, symptoms, notes } = req.body || {};
+
+  const symptomList = Array.isArray(symptoms)
+    ? symptoms.map((s) => String(s).trim()).filter(Boolean)
+    : typeof symptoms === 'string'
+      ? symptoms.split(',').map((s) => s.trim()).filter(Boolean)
+      : [];
+
+  const trimmedNotes = typeof notes === 'string' ? notes.trim() : '';
+  const combinedSymptoms = trimmedNotes ? [...symptomList, trimmedNotes] : [...symptomList];
+
+  if (combinedSymptoms.length === 0) {
+    return res.status(400).json({
+      error: 'Please select at least one symptom or describe your concern in the notes field.'
     });
   }
+
+  const parsedAge =
+    age !== undefined && age !== null && age !== '' ? Number(age) : null;
+  if (parsedAge !== null && (!Number.isFinite(parsedAge) || parsedAge < 0 || parsedAge > 120)) {
+    return res.status(400).json({
+      error: 'Patient age must be a valid number between 0 and 120.'
+    });
+  }
+
+  const result = evaluateTriage(combinedSymptoms);
+  const triageId = createId('TRG');
+
+  const record = {
+    triageId,
+    patientName: typeof patientName === 'string' && patientName.trim() ? patientName.trim() : 'Guest Patient',
+    age: parsedAge,
+    symptoms: symptomList,
+    notes: trimmedNotes,
+    ...result,
+    evaluatedAt: new Date().toISOString()
+  };
+
+  triageAssessments.set(triageId, record);
+  return res.status(201).json(record);
 });
 
-// List clinician consultation slots with optional filtering
+// List clinician consultation slots with optional priority & modality filtering
 app.get('/api/slots', (req, res) => {
-  const { urgency, modality, specialty } = req.query;
+  const { priority, modality, specialty } = req.query;
+  const normalizedPriority = priority ? String(priority).toUpperCase() : null;
 
   let result = slots.map((slot) => ({
     ...slot,
-    recommended: urgency ? slot.urgencyMatch.includes(String(urgency).toUpperCase()) : false
+    recommended: normalizedPriority ? slot.priorityMatch.includes(normalizedPriority) : false
   }));
 
   if (modality && modality !== 'all') {
@@ -187,7 +199,7 @@ app.get('/api/slots', (req, res) => {
     );
   }
 
-  // Sort recommended available slots first, booked slots last
+  // Sort available & recommended slots first, booked slots last
   result.sort((a, b) => {
     if (a.booked !== b.booked) return a.booked ? 1 : -1;
     if (a.recommended !== b.recommended) return a.recommended ? -1 : 1;
@@ -197,9 +209,9 @@ app.get('/api/slots', (req, res) => {
   return res.json({ slots: result });
 });
 
-// Create a patient consultation booking linked to a triage assessment
+// Create a consultation booking linked to an evaluated triage record
 app.post('/api/bookings', (req, res) => {
-  const { triageId, slotId, patientEmail, patientPhone, notes } = req.body || {};
+  const { triageId, slotId, patientName, patientEmail, patientPhone, notes } = req.body || {};
 
   if (!triageId || !triageAssessments.has(triageId)) {
     return res.status(400).json({
@@ -208,16 +220,15 @@ app.post('/api/bookings', (req, res) => {
   }
 
   const triage = triageAssessments.get(triageId);
-  if (!triage.bookingAllowed) {
+  if (!triage.allowOnlineBooking) {
     return res.status(400).json({
       error:
-        'Routine telehealth booking is disabled for Emergency triage results. Please contact emergency services (911 / 112) immediately.'
+        'Online booking is disabled for RED priority emergencies. Please seek immediate in-person care or call emergency services.'
     });
   }
 
   const email = typeof patientEmail === 'string' ? patientEmail.trim() : '';
-  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  if (!emailValid) {
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return res.status(400).json({ error: 'Please provide a valid email address for confirmation.' });
   }
 
@@ -244,34 +255,35 @@ app.post('/api/bookings', (req, res) => {
     bookingId,
     triageId,
     slotId: slot.id,
-    patientName: triage.patientName,
+    patientName:
+      typeof patientName === 'string' && patientName.trim()
+        ? patientName.trim()
+        : triage.patientName,
     patientEmail: email,
     patientPhone: phone,
-    urgencyLevel: triage.level,
-    urgencyLabel: triage.label,
-    urgencyScore: triage.score,
+    priority: triage.priority,
+    action: triage.action,
     clinician: slot.clinician,
     specialty: slot.specialty,
     date: slot.date,
     time: slot.time,
     modality: slot.modality,
-    notes: typeof notes === 'string' ? notes.trim() : '',
+    notes: typeof notes === 'string' ? notes.trim() : triage.notes,
     sessionUrl: `https://meet.telemedicine-hub.local/room/${bookingId.toLowerCase()}`,
     status: 'CONFIRMED',
     createdAt: new Date().toISOString()
   };
 
   bookings.set(bookingId, booking);
-
   return res.status(201).json(booking);
 });
 
-// List all confirmed bookings
+// List confirmed bookings
 app.get('/api/bookings', (_req, res) => {
   res.json({ bookings: Array.from(bookings.values()) });
 });
 
-// Cancel an existing booking and release the slot
+// Cancel an existing booking and release its slot
 app.delete('/api/bookings/:id', (req, res) => {
   const { id } = req.params;
   if (!bookings.has(id)) {
@@ -288,7 +300,7 @@ app.delete('/api/bookings/:id', (req, res) => {
   return res.json({ cancelled: true, bookingId: id, releasedSlotId: booking.slotId });
 });
 
-// SPA fallback to index.html for unknown non-API routes
+// SPA fallback to index.html for non-API routes
 app.get('*', (req, res, next) => {
   if (req.path.startsWith('/api/')) {
     return next();
