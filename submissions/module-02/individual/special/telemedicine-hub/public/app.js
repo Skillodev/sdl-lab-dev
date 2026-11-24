@@ -1,7 +1,6 @@
 /**
  * Telemedicine Triage & Patient Booking Hub — Client Controller
- * Handles triage form submission, red-flag handling, slot filtering/selection,
- * booking confirmation, and cancellation.
+ * Integrates with RED / YELLOW / GREEN triage engine and booking API.
  */
 
 (() => {
@@ -19,9 +18,6 @@
   const triageResetBtn = document.getElementById('triage-reset-btn');
   const triageError = document.getElementById('triage-error');
 
-  const severityInput = document.getElementById('severity');
-  const severityBadge = document.getElementById('severity-badge');
-
   const step1 = document.getElementById('step-1');
   const step2 = document.getElementById('step-2');
   const step3 = document.getElementById('step-3');
@@ -32,12 +28,9 @@
   const triageAlertBox = document.getElementById('triage-alert-box');
   const triageActionTitle = document.getElementById('triage-action-title');
   const triageActionBody = document.getElementById('triage-action-body');
-  const triageScoreValue = document.getElementById('triage-score-value');
-  const triageScoreBar = document.getElementById('triage-score-bar');
-  const triageScoreFill = document.getElementById('triage-score-fill');
-  const triageWindowText = document.getElementById('triage-window-text');
-  const triageSpecialtyText = document.getElementById('triage-specialty-text');
-  const triageFactorsList = document.getElementById('triage-factors-list');
+  const triageBookingStatus = document.getElementById('triage-booking-status');
+  const triageRefText = document.getElementById('triage-ref-text');
+  const triageSymptomsList = document.getElementById('triage-symptoms-list');
 
   const bookingSubtitle = document.getElementById('booking-subtitle');
   const bookingStepBadge = document.getElementById('booking-step-badge');
@@ -58,9 +51,14 @@
   const receiptDetails = document.getElementById('receipt-details');
   const cancelBookingBtn = document.getElementById('cancel-booking-btn');
 
+  const PRIORITY_STYLE = {
+    RED: { classSuffix: 'emergency', title: 'RED Priority — Emergency Escalation' },
+    YELLOW: { classSuffix: 'urgent', title: 'YELLOW Priority — Urgent Teleconsultation' },
+    GREEN: { classSuffix: 'standard', title: 'GREEN Priority — Routine Care' }
+  };
+
   function updateStepper(activeStep) {
-    const items = [step1, step2, step3];
-    items.forEach((el, index) => {
+    [step1, step2, step3].forEach((el, index) => {
       const stepNum = index + 1;
       el.classList.remove('is-current', 'is-complete');
       if (stepNum < activeStep) {
@@ -69,24 +67,6 @@
         el.classList.add('is-current');
       }
     });
-  }
-
-  function updateSeverityBadge() {
-    const val = Number(severityInput.value);
-    severityBadge.className = 'badge';
-    if (val >= 8) {
-      severityBadge.classList.add('badge--emergency');
-      severityBadge.textContent = `${val} / 10 — Severe`;
-    } else if (val >= 5) {
-      severityBadge.classList.add('badge--urgent');
-      severityBadge.textContent = `${val} / 10 — Moderate-High`;
-    } else if (val >= 3) {
-      severityBadge.classList.add('badge--standard');
-      severityBadge.textContent = `${val} / 10 — Moderate`;
-    } else {
-      severityBadge.classList.add('badge--routine');
-      severityBadge.textContent = `${val} / 10 — Mild`;
-    }
   }
 
   function showAlert(el, message) {
@@ -99,45 +79,45 @@
     el.classList.add('hidden');
   }
 
-  function tierKey(level) {
-    return String(level || 'ROUTINE').toLowerCase();
-  }
-
   function renderTriageResult(triage) {
-    const key = tierKey(triage.level);
+    const meta = PRIORITY_STYLE[triage.priority] || PRIORITY_STYLE.GREEN;
 
     triageEmptyState.classList.add('hidden');
     triageResultPanel.classList.remove('hidden');
 
-    resultTierBadge.className = `badge badge--${key}`;
-    resultTierBadge.textContent = triage.level;
+    resultTierBadge.className = `badge badge--${meta.classSuffix}`;
+    resultTierBadge.textContent = triage.priority;
 
-    triageAlertBox.className = `alert alert--${key}`;
-    triageActionTitle.textContent = triage.label;
-    triageActionBody.textContent = triage.recommendedAction;
+    triageAlertBox.className = `alert alert--${meta.classSuffix}`;
+    triageActionTitle.textContent = meta.title;
+    triageActionBody.textContent = triage.action;
 
-    triageScoreValue.textContent = `${triage.score} / 100`;
-    triageScoreBar.setAttribute('aria-valuenow', String(triage.score));
-    triageScoreFill.className = `score-bar__fill score-bar__fill--${key}`;
-    triageScoreFill.style.width = `${triage.score}%`;
+    triageBookingStatus.className = triage.allowOnlineBooking
+      ? 'badge badge--standard'
+      : 'badge badge--emergency';
+    triageBookingStatus.textContent = triage.allowOnlineBooking ? 'Enabled' : 'Locked (ER Only)';
 
-    triageWindowText.textContent = `Target Window: ${triage.targetWindow}`;
-    triageSpecialtyText.textContent = `Recommended Pathway: ${triage.recommendedSpecialty}`;
+    triageRefText.textContent = `Reference: ${triage.triageId} · Patient: ${triage.patientName}`;
 
-    triageFactorsList.innerHTML = '';
-    (triage.factors || []).forEach((factor) => {
+    triageSymptomsList.innerHTML = '';
+    const displayed = [...(triage.symptoms || [])];
+    if (triage.notes) {
+      displayed.push(`Note: ${triage.notes}`);
+    }
+
+    displayed.forEach((item) => {
       const li = document.createElement('li');
       li.className = 'factor-list__item';
 
-      const labelSpan = document.createElement('span');
-      labelSpan.textContent = factor.label;
+      const textSpan = document.createElement('span');
+      textSpan.textContent = item;
 
-      const impactSpan = document.createElement('span');
-      impactSpan.className = 'factor-list__impact';
-      impactSpan.textContent = factor.impact;
+      const tagSpan = document.createElement('span');
+      tagSpan.className = 'factor-list__impact';
+      tagSpan.textContent = triage.priority;
 
-      li.append(labelSpan, impactSpan);
-      triageFactorsList.appendChild(li);
+      li.append(textSpan, tagSpan);
+      triageSymptomsList.appendChild(li);
     });
   }
 
@@ -145,7 +125,7 @@
     const hasSlot = Boolean(state.selectedSlotId);
     const hasEmail = patientEmailInput.value.trim().length > 3;
     const hasPhone = patientPhoneInput.value.trim().length >= 7;
-    const allowed = Boolean(state.triage && state.triage.bookingAllowed);
+    const allowed = Boolean(state.triage && state.triage.allowOnlineBooking);
 
     confirmBookingBtn.disabled = !(allowed && hasSlot && hasEmail && hasPhone);
 
@@ -230,10 +210,10 @@
   }
 
   async function loadSlots() {
-    if (!state.triage || !state.triage.bookingAllowed) return;
+    if (!state.triage || !state.triage.allowOnlineBooking) return;
 
     const params = new URLSearchParams({
-      urgency: state.triage.level,
+      priority: state.triage.priority,
       modality: state.selectedModality
     });
 
@@ -264,7 +244,7 @@
 
     const entries = [
       ['Booking Code', booking.bookingId],
-      ['Triage Reference', `${booking.triageId} (${booking.urgencyLevel})`],
+      ['Triage Reference', `${booking.triageId} (${booking.priority})`],
       ['Patient', booking.patientName],
       ['Clinician', `${booking.clinician} (${booking.specialty})`],
       ['Scheduled Time', `${booking.time} · ${booking.date}`],
@@ -297,17 +277,20 @@
     clearAlert(bookingError);
 
     const formData = new FormData(triageForm);
-    const payload = {
-      patientName: String(formData.get('patientName') || '').trim(),
-      age: formData.get('age'),
-      temperature: formData.get('temperature'),
-      symptomCategory: formData.get('symptomCategory'),
-      severity: Number(formData.get('severity')),
-      duration: formData.get('duration'),
-      redFlags: formData.getAll('redFlags'),
-      riskFactors: formData.getAll('riskFactors'),
-      notes: String(formData.get('notes') || '').trim()
-    };
+    const patientName = String(formData.get('patientName') || '').trim();
+    const age = formData.get('age');
+    const symptoms = formData.getAll('symptoms').map(String);
+    const notes = String(formData.get('notes') || '').trim();
+
+    if (patientName.length < 2) {
+      showAlert(triageError, 'Please enter the patient full name (at least 2 characters).');
+      return;
+    }
+
+    if (symptoms.length === 0 && !notes) {
+      showAlert(triageError, 'Please select at least one symptom or enter notes before evaluating triage.');
+      return;
+    }
 
     triageSubmitBtn.disabled = true;
     triageSubmitBtn.textContent = 'Evaluating Symptoms...';
@@ -316,12 +299,12 @@
       const response = await fetch('/api/triage', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({ patientName, age, symptoms, notes })
       });
 
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.error || 'Please verify all required triage fields.');
+        throw new Error(data.error || 'Unable to evaluate triage.');
       }
 
       state.triage = data;
@@ -330,34 +313,37 @@
       renderTriageResult(data);
       bookingLockedBanner.classList.add('hidden');
 
-      if (!data.bookingAllowed) {
+      if (!data.allowOnlineBooking) {
         updateStepper(2);
         bookingEmergencyBanner.classList.remove('hidden');
         bookingControls.classList.add('hidden');
         bookingStepBadge.className = 'badge badge--emergency';
-        bookingStepBadge.textContent = 'ER Escalation';
+        bookingStepBadge.textContent = 'RED Escalation';
         bookingSubtitle.textContent = 'Emergency symptoms detected — online booking is locked for safety.';
       } else {
         updateStepper(3);
         bookingEmergencyBanner.classList.add('hidden');
         bookingControls.classList.remove('hidden');
-        bookingStepBadge.className = 'badge badge--accent';
-        bookingStepBadge.textContent = 'Step 3 of 3';
-        bookingSubtitle.textContent = `Showing clinicians prioritized for ${data.label} (${data.recommendedSpecialty}).`;
+        bookingStepBadge.className =
+          data.priority === 'YELLOW' ? 'badge badge--urgent' : 'badge badge--standard';
+        bookingStepBadge.textContent = `${data.priority} Priority`;
+        bookingSubtitle.textContent =
+          data.priority === 'YELLOW'
+            ? 'Urgent priority unlocked — same-day teleconsultation slots within 2 hours are highlighted.'
+            : 'Routine booking unlocked — choose any convenient consultation slot below.';
         await loadSlots();
       }
     } catch (err) {
       showAlert(triageError, err.message);
     } finally {
       triageSubmitBtn.disabled = false;
-      triageSubmitBtn.textContent = 'Run Clinical Triage';
+      triageSubmitBtn.textContent = 'Evaluate Triage Priority';
     }
   });
 
   // Handle Reset Assessment
   triageResetBtn.addEventListener('click', () => {
     triageForm.reset();
-    updateSeverityBadge();
     clearAlert(triageError);
     clearAlert(bookingError);
 
@@ -397,11 +383,10 @@
     });
   });
 
-  // Live validation for booking CTA enablement
   patientEmailInput.addEventListener('input', updateBookingButtonState);
   patientPhoneInput.addEventListener('input', updateBookingButtonState);
 
-  // Handle Step 3: Booking Submission
+  // Handle Booking Submission
   bookingForm.addEventListener('submit', async (event) => {
     event.preventDefault();
     clearAlert(bookingError);
@@ -421,6 +406,7 @@
         body: JSON.stringify({
           triageId: state.triage.triageId,
           slotId: state.selectedSlotId,
+          patientName: state.triage.patientName,
           patientEmail: patientEmailInput.value.trim(),
           patientPhone: patientPhoneInput.value.trim(),
           notes: document.getElementById('notes').value.trim()
@@ -473,8 +459,5 @@
     }
   });
 
-  // Initialize UI
-  severityInput.addEventListener('input', updateSeverityBadge);
-  updateSeverityBadge();
   updateStepper(1);
 })();

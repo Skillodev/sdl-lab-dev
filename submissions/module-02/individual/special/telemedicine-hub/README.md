@@ -19,22 +19,18 @@ telemedicine-hub/
 │   ├── styles.css        # 8pt grid, 60-30-10 color tokens, WCAG AA, 5 states
 │   └── app.js            # Triage submission, slot filtering & booking flow
 ├── src/
-│   ├── triageEngine.js   # Deterministic red-flag & urgency scoring engine
+│   ├── triageEngine.js   # RED / YELLOW / GREEN red-flag & urgency logic
 │   └── server.js         # Express REST API & consultation booking endpoints
 ├── .gitignore
 ├── package.json
 └── README.md
 ```
 
-### Clinical Triage Pathway
+### Clinical Triage Pathway (`RED` / `YELLOW` / `GREEN`)
 
-1. **Immediate Red-Flag Screening:** Explicit checklist items (chest pain, severe shortness of breath, FAST stroke signs, uncontrolled bleeding, altered consciousness, anaphylaxis) plus a free-text safety keyword scanner immediately escalate to **Emergency (Tier 1, 100 pts)** and lock routine telehealth slot booking for patient safety.
-2. **Weighted Urgency Scoring (0–100):** Non-red-flag assessments combine primary symptom category weight, 1–10 pain/discomfort severity, onset duration, optional body temperature (°C), age group modifier, and clinical comorbidities to classify into:
-   - **EMERGENCY (85–100 pts / Red Flag):** Immediate 911 / 112 or ER visit.
-   - **URGENT (55–84 pts):** Same-day priority telehealth within 2 hours.
-   - **STANDARD (30–54 pts):** Clinician evaluation within 24 hours.
-   - **ROUTINE (0–29 pts):** Routine follow-up or self-care guidance within 24–48 hours.
-3. **Priority Slot Booking & Cancellation:** Matches recommended clinician specialties, filters by modality (`video`, `audio`, `chat`), prevents double-booking (`409 Conflict`), issues a confirmation receipt, and supports slot release via cancellation.
+1. **`RED` (Emergency):** Triggered when any symptom or clinical note matches `chest pain`, `difficulty breathing`, `severe bleeding`, `unconscious`, or `stroke`. Sets `allowOnlineBooking: false`, blocks routine slot booking, and directs the patient to immediate in-person emergency care.
+2. **`YELLOW` (Urgent):** Triggered when symptoms match `high fever`, `persistent vomiting`, `severe headache`, `migraine`, or `infection`. Sets `allowOnlineBooking: true` and highlights priority teleconsultation slots within 2 hours.
+3. **`GREEN` (Routine):** Assigned when no RED or YELLOW flags are present. Sets `allowOnlineBooking: true` for standard appointment booking.
 
 ---
 
@@ -59,10 +55,9 @@ Open `http://localhost:3000` in your browser.
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
 | `GET` | `/api/health` | Service health status and server timestamp |
-| `GET` | `/api/triage/metadata` | Returns red-flag rules, symptom categories, durations, and risk factors |
-| `POST` | `/api/triage` | Validates input, runs red-flag & urgency scoring, returns `triageId` & breakdown |
-| `GET` | `/api/slots` | Lists consultation slots; supports `?urgency=`, `?modality=`, `?specialty=` |
-| `POST` | `/api/bookings` | Books an available slot linked to a non-emergency `triageId`; returns receipt |
+| `POST` | `/api/triage` | Evaluates `{ patientName, age, symptoms, notes }` and returns `{ triageId, priority, action, allowOnlineBooking }` |
+| `GET` | `/api/slots` | Lists consultation slots; supports `?priority=YELLOW\|GREEN`, `?modality=video\|audio\|chat`, `?specialty=` |
+| `POST` | `/api/bookings` | Books an available slot linked to a `YELLOW`/`GREEN` `triageId`; blocks `RED` (`400`) and double-bookings (`409`) |
 | `GET` | `/api/bookings` | Lists all active confirmed bookings |
 | `DELETE` | `/api/bookings/:id` | Cancels a booking and restores the clinician slot to available |
 
@@ -95,15 +90,14 @@ All foreground/background pairs were verified mathematically against WCAG 2.1 re
 | **Accent / Active CTA** | 10% | `#134E4A` | `#FFFFFF` text on `#134E4A` | `9.48:1` | Yes |
 | **Accent Tint Surface** | 10% | `#F0FDFA` | `#115E59` text on `#F0FDFA` | `7.27:1` | Yes |
 | **Keyboard Focus Ring** | Accent | `#0369A1` | `#0369A1` ring on `#FFFFFF` | `5.93:1` | Yes (`>= 3:1`) |
-| **Semantic: Emergency** | Semantic | `#B91C1C` / `#FEF2F2` | `#FFFFFF` on `#B91C1C` / `#991B1B` on `#FEF2F2` | `6.47:1` / `7.60:1` | Yes |
-| **Semantic: Urgent** | Semantic | `#B45309` / `#FFFBEB` | `#FFFFFF` on `#B45309` / `#92400E` on `#FFFBEB` | `5.02:1` / `6.84:1` | Yes |
-| **Semantic: Standard** | Semantic | `#047857` / `#ECFDF5` | `#FFFFFF` on `#047857` / `#065F46` on `#ECFDF5` | `5.48:1` / `7.29:1` | Yes |
-| **Semantic: Routine** | Semantic | `#1D4ED8` / `#EFF6FF` | `#FFFFFF` on `#1D4ED8` / `#1E40AF` on `#EFF6FF` | `6.70:1` / `8.01:1` | Yes |
+| **Semantic: RED (Emergency)** | Semantic | `#B91C1C` / `#FEF2F2` | `#FFFFFF` on `#B91C1C` / `#991B1B` on `#FEF2F2` | `6.47:1` / `7.60:1` | Yes |
+| **Semantic: YELLOW (Urgent)** | Semantic | `#B45309` / `#FFFBEB` | `#FFFFFF` on `#B45309` / `#92400E` on `#FFFBEB` | `5.02:1` / `6.84:1` | Yes |
+| **Semantic: GREEN (Routine)** | Semantic | `#047857` / `#ECFDF5` | `#FFFFFF` on `#047857` / `#065F46` on `#ECFDF5` | `5.48:1` / `7.29:1` | Yes |
 | **Disabled Controls** | State | `#E2E8F0` / `#475569` | `#475569` text on `#E2E8F0` | `6.15:1` | Yes |
 
 ### C. Five Interactive Component States
 
-Every core interactive control (primary/secondary buttons, form inputs/selects, selectable triage cards, modality filter tabs, and clinician time-slot cards) implements all 5 required states (also inspectable live inside the page's collapsible **UI/UX Design System Audit** specimen):
+Every core interactive control (primary/secondary buttons, form inputs, selectable symptom cards, modality filter tabs, and clinician time-slot cards) implements all 5 required states (also inspectable live inside the page's collapsible **UI/UX Design System Audit** specimen):
 
 - [x] **Default** — Crisp resting borders (`#64748B`) and high-contrast labels.
 - [x] **Hover** — Clear color shift (`#115E59` / `#F0FDFA` / `#E2E8F0`) and subtle elevation on slot cards.

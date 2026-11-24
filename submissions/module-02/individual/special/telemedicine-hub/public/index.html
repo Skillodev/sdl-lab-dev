@@ -11,8 +11,8 @@
 
     <div class="emergency-strip" role="region" aria-label="Emergency notice">
       <div class="container emergency-strip__inner">
-        <span>Experiencing chest pain, severe breathing trouble, or stroke symptoms? Call 911 / 112 immediately.</span>
-        <span class="badge badge--emergency">24/7 Safety Screening</span>
+        <span>Experiencing chest pain, difficulty breathing, severe bleeding, or stroke symptoms? Call 911 / 112 immediately.</span>
+        <span class="badge badge--emergency">RED / YELLOW / GREEN Triage</span>
       </div>
     </div>
 
@@ -33,7 +33,7 @@
           </li>
           <li id="step-2" class="stepper__item">
             <span class="stepper__num">2</span>
-            <span>Urgency</span>
+            <span>Priority</span>
           </li>
           <li id="step-3" class="stepper__item">
             <span class="stepper__num">3</span>
@@ -51,9 +51,9 @@
           <section class="card" aria-labelledby="triage-heading">
             <div class="card__header">
               <div>
-                <h2 id="triage-heading" class="card__title">1. Clinical Triage Assessment</h2>
+                <h2 id="triage-heading" class="card__title">1. Clinical Symptom Triage</h2>
                 <p class="card__desc">
-                  Answer a brief symptom check so we can screen for emergency red flags and match you to the right clinician.
+                  Select your current symptoms or describe them below to determine your priority level (RED, YELLOW, or GREEN).
                 </p>
               </div>
               <span class="badge badge--accent">Step 1 of 3</span>
@@ -63,7 +63,7 @@
 
             <form id="triage-form" class="form-stack" novalidate>
               <!-- Patient Basics -->
-              <div class="form-grid form-grid--3col">
+              <div class="form-grid form-grid--2col">
                 <div class="field">
                   <label class="field__label" for="patientName">
                     <span>Full Name <span class="field__required" aria-hidden="true">*</span></span>
@@ -94,167 +94,108 @@
                     required
                   />
                 </div>
-
-                <div class="field">
-                  <label class="field__label" for="temperature">
-                    <span>Temp (°C)</span>
-                    <span class="field__hint">Optional</span>
-                  </label>
-                  <input
-                    id="temperature"
-                    name="temperature"
-                    type="number"
-                    step="0.1"
-                    min="30"
-                    max="45"
-                    class="form-control"
-                    placeholder="37.2"
-                  />
-                </div>
               </div>
 
-              <!-- Red-Flag Safety Checklist -->
+              <!-- RED Flags Checklist -->
               <fieldset class="fieldset fieldset--emergency">
-                <legend class="fieldset__legend">Emergency Red-Flag Screening</legend>
+                <legend class="fieldset__legend">RED Priority — Emergency Red-Flag Symptoms</legend>
                 <p class="fieldset__hint">
-                  Check any symptom occurring right now. Selecting any item triggers immediate ER escalation.
+                  Any match blocks routine online booking and directs you to immediate in-person emergency care.
                 </p>
                 <div class="option-grid option-grid--2col">
                   <label class="selectable-card selectable-card--danger">
-                    <input type="checkbox" name="redFlags" value="chest_pain" />
-                    <span>Chest pain, pressure, or tightness</span>
+                    <input type="checkbox" name="symptoms" value="chest pain" />
+                    <span>Chest pain</span>
                   </label>
                   <label class="selectable-card selectable-card--danger">
-                    <input type="checkbox" name="redFlags" value="shortness_of_breath" />
-                    <span>Severe shortness of breath or gasping</span>
+                    <input type="checkbox" name="symptoms" value="difficulty breathing" />
+                    <span>Difficulty breathing</span>
                   </label>
                   <label class="selectable-card selectable-card--danger">
-                    <input type="checkbox" name="redFlags" value="stroke_signs" />
-                    <span>Facial drooping, arm weakness, or slurred speech</span>
+                    <input type="checkbox" name="symptoms" value="severe bleeding" />
+                    <span>Severe bleeding</span>
                   </label>
                   <label class="selectable-card selectable-card--danger">
-                    <input type="checkbox" name="redFlags" value="uncontrolled_bleeding" />
-                    <span>Severe or uncontrolled bleeding</span>
+                    <input type="checkbox" name="symptoms" value="unconscious" />
+                    <span>Unconscious / fainting</span>
                   </label>
                   <label class="selectable-card selectable-card--danger">
-                    <input type="checkbox" name="redFlags" value="altered_consciousness" />
-                    <span>Fainting, severe confusion, or unresponsiveness</span>
-                  </label>
-                  <label class="selectable-card selectable-card--danger">
-                    <input type="checkbox" name="redFlags" value="anaphylaxis" />
-                    <span>Swelling of lips, tongue, or throat</span>
+                    <input type="checkbox" name="symptoms" value="stroke" />
+                    <span>Stroke signs (face droop / slurred speech)</span>
                   </label>
                 </div>
               </fieldset>
 
-              <!-- Primary Symptom & Severity -->
-              <div class="form-grid form-grid--2col">
-                <div class="field">
-                  <label class="field__label" for="symptomCategory">
-                    <span>Primary Symptom Category <span class="field__required" aria-hidden="true">*</span></span>
-                  </label>
-                  <select id="symptomCategory" name="symptomCategory" class="form-control" required>
-                    <option value="">Select primary concern...</option>
-                    <option value="fever_infection">Fever, Chills, or Suspected Infection</option>
-                    <option value="respiratory">Cough, Sore Throat, or Mild Wheezing</option>
-                    <option value="cardiovascular_mild">Palpitations or Lightheadedness</option>
-                    <option value="neurological">Headache, Migraine, or Dizziness</option>
-                    <option value="gastrointestinal">Nausea, Vomiting, or Abdominal Discomfort</option>
-                    <option value="mental_health">Anxiety, Stress, or Sleep Disturbance</option>
-                    <option value="musculoskeletal">Joint Pain, Backache, or Minor Sprain</option>
-                    <option value="dermatological">Skin Rash, Hives (Mild), or Irritation</option>
-                    <option value="general_followup">Prescription Refill or Routine Follow-Up</option>
-                  </select>
-                </div>
-
-                <div class="field">
-                  <label class="field__label" for="severity">
-                    <span>Pain / Discomfort Severity</span>
-                    <span id="severity-badge" class="badge badge--standard">4 / 10 — Moderate</span>
-                  </label>
-                  <div class="severity-box">
-                    <input
-                      id="severity"
-                      name="severity"
-                      type="range"
-                      min="1"
-                      max="10"
-                      value="4"
-                      class="severity-slider"
-                      aria-describedby="severity-scale-hint"
-                    />
-                    <div id="severity-scale-hint" class="severity-scale">
-                      <span>1 (Mild)</span>
-                      <span>5 (Moderate)</span>
-                      <span>10 (Severe)</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Duration -->
+              <!-- YELLOW Flags Checklist -->
               <fieldset class="fieldset">
-                <legend class="fieldset__legend">How long have these symptoms lasted?</legend>
-                <div class="option-grid option-grid--compact">
-                  <label class="selectable-card">
-                    <input type="radio" name="duration" value="sudden_hours" checked />
-                    <span>&lt; 24 hours (Sudden)</span>
-                  </label>
-                  <label class="selectable-card">
-                    <input type="radio" name="duration" value="days_1_3" />
-                    <span>1 to 3 days</span>
-                  </label>
-                  <label class="selectable-card">
-                    <input type="radio" name="duration" value="days_4_7" />
-                    <span>4 to 7 days</span>
-                  </label>
-                  <label class="selectable-card">
-                    <input type="radio" name="duration" value="chronic_over_week" />
-                    <span>More than 7 days</span>
-                  </label>
-                </div>
-              </fieldset>
-
-              <!-- Clinical Risk Factors -->
-              <fieldset class="fieldset">
-                <legend class="fieldset__legend">Clinical Risk Factors (Optional)</legend>
+                <legend class="fieldset__legend">YELLOW Priority — Urgent Symptoms (Within 2 Hours)</legend>
+                <p class="fieldset__hint">
+                  Matches prioritize same-day teleconsultation slots within 2 hours.
+                </p>
                 <div class="option-grid option-grid--2col">
                   <label class="selectable-card">
-                    <input type="checkbox" name="riskFactors" value="immunocompromised" />
-                    <span>Immunocompromised</span>
+                    <input type="checkbox" name="symptoms" value="high fever" />
+                    <span>High fever</span>
                   </label>
                   <label class="selectable-card">
-                    <input type="checkbox" name="riskFactors" value="pregnancy" />
-                    <span>Currently pregnant</span>
+                    <input type="checkbox" name="symptoms" value="persistent vomiting" />
+                    <span>Persistent vomiting</span>
                   </label>
                   <label class="selectable-card">
-                    <input type="checkbox" name="riskFactors" value="chronic_heart_lung" />
-                    <span>Chronic heart or lung disease</span>
+                    <input type="checkbox" name="symptoms" value="severe headache" />
+                    <span>Severe headache</span>
                   </label>
                   <label class="selectable-card">
-                    <input type="checkbox" name="riskFactors" value="diabetes" />
-                    <span>Diabetes</span>
+                    <input type="checkbox" name="symptoms" value="migraine" />
+                    <span>Migraine</span>
+                  </label>
+                  <label class="selectable-card">
+                    <input type="checkbox" name="symptoms" value="infection" />
+                    <span>Suspected infection</span>
                   </label>
                 </div>
               </fieldset>
 
-              <!-- Additional Notes -->
+              <!-- GREEN Routine Symptoms -->
+              <fieldset class="fieldset">
+                <legend class="fieldset__legend">GREEN Priority — Routine Concerns</legend>
+                <div class="option-grid option-grid--2col">
+                  <label class="selectable-card">
+                    <input type="checkbox" name="symptoms" value="mild cough" />
+                    <span>Mild cough or sore throat</span>
+                  </label>
+                  <label class="selectable-card">
+                    <input type="checkbox" name="symptoms" value="skin rash" />
+                    <span>Mild skin rash or irritation</span>
+                  </label>
+                  <label class="selectable-card">
+                    <input type="checkbox" name="symptoms" value="back or joint ache" />
+                    <span>Back or joint ache</span>
+                  </label>
+                  <label class="selectable-card">
+                    <input type="checkbox" name="symptoms" value="prescription refill" />
+                    <span>Prescription refill or follow-up</span>
+                  </label>
+                </div>
+              </fieldset>
+
+              <!-- Additional Notes (also evaluated by triageEngine) -->
               <div class="field">
                 <label class="field__label" for="notes">
-                  <span>Additional Symptom Details</span>
-                  <span class="field__hint">Scanned automatically for safety keywords</span>
+                  <span>Other Symptoms / Clinical Notes</span>
+                  <span class="field__hint">Automatically scanned for RED &amp; YELLOW flags</span>
                 </label>
                 <textarea
                   id="notes"
                   name="notes"
                   class="form-control"
-                  placeholder="Describe onset, medications taken, or any other relevant context..."
+                  placeholder="Describe any additional symptoms (e.g., high fever since last night, mild allergy)..."
                 ></textarea>
               </div>
 
               <div class="btn-row">
                 <button id="triage-submit-btn" type="submit" class="btn btn-primary">
-                  Run Clinical Triage
+                  Evaluate Triage Priority
                 </button>
                 <button id="triage-reset-btn" type="button" class="btn btn-secondary">
                   Reset Assessment
@@ -277,14 +218,14 @@
 
             <div id="booking-locked-banner" class="alert alert--routine" role="status">
               <p class="alert__title">Triage required before booking</p>
-              <p>Submit your symptom assessment above to match with Urgent Care, General Practice, or Specialist slots.</p>
+              <p>Submit your symptom assessment above to unlock YELLOW priority or GREEN routine slots.</p>
             </div>
 
             <div id="booking-emergency-banner" class="alert alert--emergency hidden" role="alert">
-              <p class="alert__title">Routine Telehealth Booking Disabled</p>
+              <p class="alert__title">Online Booking Disabled — RED Priority Emergency</p>
               <p>
-                Because emergency red-flag symptoms were detected, online slot booking is intentionally locked for your safety.
-                Please call <strong>911 / 112</strong> or go to the nearest emergency room immediately.
+                Emergency — Seek immediate in-person care or call emergency services (<strong>911 / 112</strong>).
+                Routine telehealth slot booking is locked for patient safety.
               </p>
             </div>
 
@@ -357,12 +298,12 @@
 
         <!-- Right 5-Column Sticky Assessment & Booking Receipt Sidebar -->
         <aside class="sidebar-column" aria-label="Triage outcome and booking receipt">
-          <!-- Triage Assessment Card -->
+          <!-- Triage Outcome Card -->
           <section class="card" aria-labelledby="result-heading">
             <div class="card__header">
               <div>
                 <h2 id="result-heading" class="card__title">Triage Outcome</h2>
-                <p class="card__desc">Real-time urgency tier &amp; clinical scoring breakdown</p>
+                <p class="card__desc">Real-time RED / YELLOW / GREEN priority classification</p>
               </div>
               <span id="result-tier-badge" class="badge badge--neutral">Pending</span>
             </div>
@@ -370,25 +311,20 @@
             <!-- Empty Pre-Triage Guide -->
             <div id="triage-empty-state">
               <p class="card__desc">
-                Our deterministic triage engine screens for immediate red flags first, then weights symptom category,
-                severity, onset duration, fever, age, and comorbidities on a 0–100 urgency scale.
+                Symptoms are screened against RED emergency flags first, then YELLOW urgent flags, before assigning GREEN routine care.
               </p>
               <ul class="tier-guide">
                 <li class="tier-guide__item">
-                  <span class="badge badge--emergency">Emergency</span>
-                  <span>Red flag or 85–100 pts (ER)</span>
+                  <span class="badge badge--emergency">RED</span>
+                  <span>Emergency — Immediate in-person / ER</span>
                 </li>
                 <li class="tier-guide__item">
-                  <span class="badge badge--urgent">Urgent</span>
-                  <span>55–84 pts (&lt; 2 hrs telehealth)</span>
+                  <span class="badge badge--urgent">YELLOW</span>
+                  <span>Urgent — Priority telehealth &lt; 2 hrs</span>
                 </li>
                 <li class="tier-guide__item">
-                  <span class="badge badge--standard">Standard</span>
-                  <span>30–54 pts (Within 24 hrs)</span>
-                </li>
-                <li class="tier-guide__item">
-                  <span class="badge badge--routine">Routine</span>
-                  <span>0–29 pts (24–48 hrs)</span>
+                  <span class="badge badge--standard">GREEN</span>
+                  <span>Routine — Standard booking available</span>
                 </li>
               </ul>
             </div>
@@ -402,18 +338,14 @@
 
               <div class="score-meter">
                 <div class="score-meter__row">
-                  <span class="field__label">Urgency Score</span>
-                  <span id="triage-score-value" class="score-meter__value">0 / 100</span>
+                  <span class="field__label">Online Booking Status</span>
+                  <span id="triage-booking-status" class="badge badge--neutral">—</span>
                 </div>
-                <div class="score-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="triage-score-bar">
-                  <div id="triage-score-fill" class="score-bar__fill" style="width: 0%"></div>
-                </div>
-                <p id="triage-window-text" class="field__hint" style="margin-top: 8px;"></p>
-                <p id="triage-specialty-text" class="field__hint" style="margin-top: 4px;"></p>
+                <p id="triage-ref-text" class="field__hint" style="margin-top: 8px;"></p>
               </div>
 
-              <h3 class="field__label" style="margin: 16px 0 0;">Clinical Scoring Breakdown</h3>
-              <ul id="triage-factors-list" class="factor-list"></ul>
+              <h3 class="field__label" style="margin: 16px 0 0;">Evaluated Symptoms</h3>
+              <ul id="triage-symptoms-list" class="factor-list"></ul>
             </div>
           </section>
 
@@ -464,8 +396,8 @@
                   <div class="swatch__info">Primary Clinical Teal CTA &amp; Active Indicators (5.47:1)</div>
                 </div>
                 <div class="swatch">
-                  <div class="swatch__color" style="background: #B91C1C; color: #FFFFFF;">Red-Flag #B91C1C</div>
-                  <div class="swatch__info">Emergency Escalation Semantic Badge (6.47:1)</div>
+                  <div class="swatch__color" style="background: #B91C1C; color: #FFFFFF;">RED #B91C1C</div>
+                  <div class="swatch__info">Emergency Priority Semantic Badge (6.47:1)</div>
                 </div>
               </div>
             </div>
