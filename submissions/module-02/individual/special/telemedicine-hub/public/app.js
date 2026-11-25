@@ -1,522 +1,487 @@
 /**
- * Telemedicine Triage & Patient Booking Hub — Client Controller
- * Connects UI to POST /api/triage, POST /api/bookings, and GET /api/bookings.
+ * MedBridge Telemedicine Hub — Low-Bandwidth 3-Screen Client Controller
+ * Wired to Express API: POST /api/triage, POST /api/bookings, GET /api/bookings
  */
 
 (() => {
-  const CLINICIAN_SLOTS = [
+  const SLOTS = [
     {
-      label: 'Today, In 25 mins — Dr. Amara Okafor (Urgent Care · Video)',
-      clinician: 'Dr. Amara Okafor, MD',
-      specialty: 'Urgent Care',
-      time: 'Today, In 25 mins',
+      label: 'Today, 2:15 PM (In 25m) — Dr. Amara Okafor (Urgent Care · Video)',
+      time: 'Today, 2:15 PM (In 25 mins)',
+      clinician: 'Dr. Amara Okafor · Urgent Care',
       modality: 'video',
       priorityMatch: ['YELLOW']
     },
     {
-      label: 'Today, In 50 mins — Dr. Samuel Adeyemi (Internal Medicine · Video)',
-      clinician: 'Dr. Samuel Adeyemi, MD',
-      specialty: 'Internal Medicine',
-      time: 'Today, In 50 mins',
-      modality: 'video',
+      label: 'Today, 3:00 PM — Dr. Samuel Adeyemi (Internal Med · Low-BW Audio)',
+      time: 'Today, 3:00 PM',
+      clinician: 'Dr. Samuel Adeyemi · Internal Medicine',
+      modality: 'audio',
       priorityMatch: ['YELLOW', 'GREEN']
     },
     {
-      label: 'Today, 2:30 PM — Dr. Priya Nair (Urgent Care · Audio)',
-      clinician: 'Dr. Priya Nair, DO',
-      specialty: 'Urgent Care',
-      time: 'Today, 2:30 PM',
+      label: 'Today, 1:45 PM — Dr. Priya Nair (Urgent Care · Audio)',
+      time: 'Today, 1:45 PM',
+      clinician: 'Dr. Priya Nair · Urgent Care',
       modality: 'audio',
       priorityMatch: ['YELLOW'],
-      presetBooked: true // Demonstrates Disabled state out of the box
+      presetBooked: true
     },
     {
-      label: 'Today, 4:00 PM — Dr. Elena Rostova (General Practice · Video)',
-      clinician: 'Dr. Elena Rostova, MD',
-      specialty: 'General Practice',
-      time: 'Today, 4:00 PM',
+      label: 'Today, 4:30 PM — Dr. Elena Rostova (General Practice · Video)',
+      time: 'Today, 4:30 PM',
+      clinician: 'Dr. Elena Rostova · General Practice',
       modality: 'video',
       priorityMatch: ['GREEN', 'YELLOW']
     },
     {
-      label: 'Today, 5:15 PM — Dr. Marcus Vance (Family Medicine · Audio)',
-      clinician: 'Dr. Marcus Vance, MD',
-      specialty: 'Family Medicine',
-      time: 'Today, 5:15 PM',
-      modality: 'audio',
-      priorityMatch: ['GREEN']
-    },
-    {
-      label: 'Tomorrow, 9:30 AM — Dr. Hannah Mensah (Dermatology · Chat)',
-      clinician: 'Dr. Hannah Mensah, MD',
-      specialty: 'Dermatology & General Care',
+      label: 'Tomorrow, 9:30 AM — Dr. David Chen (Family Med · SMS / Chat)',
       time: 'Tomorrow, 9:30 AM',
-      modality: 'chat',
-      priorityMatch: ['GREEN']
-    },
-    {
-      label: 'Tomorrow, 11:00 AM — Dr. David Chen (Family Medicine · Chat)',
-      clinician: 'Dr. David Chen, MD',
-      specialty: 'Family Medicine',
-      time: 'Tomorrow, 11:00 AM',
+      clinician: 'Dr. David Chen · Family Medicine',
       modality: 'chat',
       priorityMatch: ['GREEN']
     }
   ];
 
-  const PRIORITY_STYLE = {
-    RED: { classSuffix: 'emergency', title: 'RED Priority — Emergency Escalation' },
-    YELLOW: { classSuffix: 'urgent', title: 'YELLOW Priority — Urgent Teleconsultation' },
-    GREEN: { classSuffix: 'standard', title: 'GREEN Priority — Routine Care' }
+  const PRIORITY_META = {
+    RED: {
+      badgeClass: 'badge--red',
+      bannerClass: 'traffic-banner--red',
+      pill: 'RED · EMERGENCY',
+      window: 'Immediate (0 min)',
+      title: 'Emergency — Seek Immediate Care or Call 911 / 112'
+    },
+    YELLOW: {
+      badgeClass: 'badge--yellow',
+      bannerClass: 'traffic-banner--yellow',
+      pill: 'YELLOW · URGENT',
+      window: 'Within 2 hours',
+      title: 'Urgent — Priority Teleconsult Within 2 Hours'
+    },
+    GREEN: {
+      badgeClass: 'badge--green',
+      bannerClass: 'traffic-banner--green',
+      pill: 'GREEN · ROUTINE',
+      window: 'Standard Appointment',
+      title: 'Routine — Standard Appointment Booking Available'
+    }
   };
 
   const state = {
+    step: 1,
     triage: null,
-    evaluatedSymptoms: [],
-    selectedModality: 'all',
-    selectedSlotLabel: null,
+    phone: '',
+    symptoms: [],
+    modality: 'all',
+    selectedSlot: null,
     bookings: []
   };
 
-  // DOM References
+  // Navigation buttons & views
+  const navStep1 = document.getElementById('nav-step-1');
+  const navStep2 = document.getElementById('nav-step-2');
+  const navStep3 = document.getElementById('nav-step-3');
+  const viewIntake = document.getElementById('view-intake');
+  const viewResult = document.getElementById('view-result');
+  const viewBooking = document.getElementById('view-booking');
+
+  // View 1 elements
   const triageForm = document.getElementById('triage-form');
-  const triageSubmitBtn = document.getElementById('triage-submit-btn');
-  const triageResetBtn = document.getElementById('triage-reset-btn');
-  const triageError = document.getElementById('triage-error');
+  const intakeError = document.getElementById('intake-error');
+  const patientNameInput = document.getElementById('patientName');
+  const patientPhoneInput = document.getElementById('patientPhone');
+  const extraNotesInput = document.getElementById('extraNotes');
+  const symptomChips = Array.from(document.querySelectorAll('#symptom-chips .symptom-chip'));
+  const selectedCountEl = document.getElementById('selected-count');
+  const checkUrgencyBtn = document.getElementById('check-urgency-btn');
+  const resetTriageBtn = document.getElementById('reset-triage-btn');
 
-  const step1 = document.getElementById('step-1');
-  const step2 = document.getElementById('step-2');
-  const step3 = document.getElementById('step-3');
-
+  // View 2 elements
   const resultTierBadge = document.getElementById('result-tier-badge');
-  const triageEmptyState = document.getElementById('triage-empty-state');
-  const triageResultPanel = document.getElementById('triage-result-panel');
-  const triageAlertBox = document.getElementById('triage-alert-box');
-  const triageActionTitle = document.getElementById('triage-action-title');
-  const triageActionBody = document.getElementById('triage-action-body');
-  const triageBookingStatus = document.getElementById('triage-booking-status');
-  const triageRefText = document.getElementById('triage-ref-text');
-  const triageSymptomsList = document.getElementById('triage-symptoms-list');
+  const resultBanner = document.getElementById('result-banner');
+  const resultPill = document.getElementById('result-pill');
+  const resultWindow = document.getElementById('result-window');
+  const resultTitle = document.getElementById('result-title');
+  const resultAction = document.getElementById('result-action');
+  const resPatient = document.getElementById('res-patient');
+  const resPhone = document.getElementById('res-phone');
+  const resSymptoms = document.getElementById('res-symptoms');
+  const resBookingStatus = document.getElementById('res-booking-status');
+  const redActions = document.getElementById('red-actions');
+  const proceedActions = document.getElementById('proceed-actions');
+  const goToBookingBtn = document.getElementById('go-to-booking-btn');
+  const editIntakeBtn = document.getElementById('edit-intake-btn');
 
+  // View 3 elements
+  const bookingPriorityBadge = document.getElementById('booking-priority-badge');
   const bookingSubtitle = document.getElementById('booking-subtitle');
-  const bookingStepBadge = document.getElementById('booking-step-badge');
-  const bookingLockedBanner = document.getElementById('booking-locked-banner');
-  const bookingEmergencyBanner = document.getElementById('booking-emergency-banner');
-  const bookingControls = document.getElementById('booking-controls');
+  const bookingError = document.getElementById('booking-error');
   const filterTabs = Array.from(document.querySelectorAll('.filter-tab'));
   const slotsGrid = document.getElementById('slots-grid');
-
-  const bookingForm = document.getElementById('booking-form');
-  const bookingError = document.getElementById('booking-error');
-  const patientPhoneInput = document.getElementById('patientPhone');
   const confirmBookingBtn = document.getElementById('confirm-booking-btn');
+  const backToResultBtn = document.getElementById('back-to-result-btn');
   const selectedSlotHint = document.getElementById('selected-slot-hint');
 
+  // Receipt & Queue elements
   const receiptCard = document.getElementById('receipt-card');
-  const receiptDetails = document.getElementById('receipt-details');
+  const receiptIdBadge = document.getElementById('receipt-id-badge');
+  const rcptPatient = document.getElementById('rcpt-patient');
+  const rcptPriority = document.getElementById('rcpt-priority');
+  const rcptSlot = document.getElementById('rcpt-slot');
+  const rcptStatus = document.getElementById('rcpt-status');
+  const rcptPhone = document.getElementById('rcpt-phone');
   const queueCountBadge = document.getElementById('queue-count-badge');
   const queueList = document.getElementById('queue-list');
 
-  function updateStepper(activeStep) {
-    [step1, step2, step3].forEach((el, index) => {
-      const stepNum = index + 1;
-      el.classList.remove('is-current', 'is-complete');
-      if (stepNum < activeStep) {
-        el.classList.add('is-complete');
-      } else if (stepNum === activeStep) {
-        el.classList.add('is-current');
-      }
-    });
-  }
-
-  function showAlert(el, message) {
-    el.textContent = message;
+  function showError(el, msg) {
+    el.textContent = msg;
     el.classList.remove('hidden');
   }
 
-  function clearAlert(el) {
+  function clearError(el) {
     el.textContent = '';
     el.classList.add('hidden');
+  }
+
+  function setActiveStep(step) {
+    state.step = step;
+    viewIntake.classList.toggle('hidden', step !== 1);
+    viewResult.classList.toggle('hidden', step !== 2);
+    viewBooking.classList.toggle('hidden', step !== 3);
+
+    const navs = [navStep1, navStep2, navStep3];
+    navs.forEach((btn, idx) => {
+      const n = idx + 1;
+      btn.classList.toggle('is-done', n < step);
+      if (n === step) {
+        btn.setAttribute('aria-current', 'step');
+      } else {
+        btn.removeAttribute('aria-current');
+      }
+    });
+
+    navStep2.disabled = !state.triage;
+    navStep3.disabled = !(state.triage && state.triage.allowOnlineBooking);
+  }
+
+  function getSelectedChipSymptoms() {
+    return symptomChips
+      .filter((chip) => chip.getAttribute('aria-pressed') === 'true')
+      .map((chip) => chip.dataset.symptom);
+  }
+
+  function updateChipCount() {
+    const count = getSelectedChipSymptoms().length;
+    selectedCountEl.textContent = `${count} selected`;
   }
 
   function isSlotBooked(slot) {
     return Boolean(slot.presetBooked || state.bookings.some((b) => b.slot === slot.label));
   }
 
-  function renderTriageResult(triage) {
-    const meta = PRIORITY_STYLE[triage.priority] || PRIORITY_STYLE.GREEN;
+  function renderResultView() {
+    const triage = state.triage;
+    if (!triage) return;
+    const meta = PRIORITY_META[triage.priority] || PRIORITY_META.GREEN;
 
-    triageEmptyState.classList.add('hidden');
-    triageResultPanel.classList.remove('hidden');
-
-    resultTierBadge.className = `badge badge--${meta.classSuffix}`;
+    resultTierBadge.className = `badge ${meta.badgeClass}`;
     resultTierBadge.textContent = triage.priority;
 
-    triageAlertBox.className = `alert alert--${meta.classSuffix}`;
-    triageActionTitle.textContent = meta.title;
-    triageActionBody.textContent = triage.action;
+    resultBanner.className = `traffic-banner ${meta.bannerClass}`;
+    resultPill.className = `badge ${meta.badgeClass}`;
+    resultPill.textContent = meta.pill;
+    resultWindow.textContent = meta.window;
+    resultTitle.textContent = meta.title;
+    resultAction.textContent = triage.action;
 
-    triageBookingStatus.className = triage.allowOnlineBooking
-      ? 'badge badge--standard'
-      : 'badge badge--emergency';
-    triageBookingStatus.textContent = triage.allowOnlineBooking ? 'Enabled' : 'Locked (ER Only)';
+    resPatient.textContent = triage.patientName;
+    resPhone.textContent = state.phone;
+    resSymptoms.textContent = state.symptoms.join(', ');
 
-    triageRefText.textContent = `Patient: ${triage.patientName}`;
-
-    triageSymptomsList.innerHTML = '';
-    state.evaluatedSymptoms.forEach((item) => {
-      const li = document.createElement('li');
-      li.className = 'factor-list__item';
-
-      const textSpan = document.createElement('span');
-      textSpan.textContent = item;
-
-      const tagSpan = document.createElement('span');
-      tagSpan.className = 'factor-list__impact';
-      tagSpan.textContent = triage.priority;
-
-      li.append(textSpan, tagSpan);
-      triageSymptomsList.appendChild(li);
-    });
-  }
-
-  function updateBookingButtonState() {
-    const hasSlot = Boolean(state.selectedSlotLabel);
-    const hasPhone = patientPhoneInput.value.trim().length >= 5;
-    const allowed = Boolean(state.triage && state.triage.allowOnlineBooking);
-
-    confirmBookingBtn.disabled = !(allowed && hasSlot && hasPhone);
-
-    selectedSlotHint.textContent = hasSlot
-      ? `Selected: ${state.selectedSlotLabel}`
-      : 'Select an available slot above to enable booking.';
+    if (triage.allowOnlineBooking) {
+      resBookingStatus.className = 'badge badge--green';
+      resBookingStatus.textContent = 'Enabled';
+      redActions.classList.add('hidden');
+      proceedActions.classList.remove('hidden');
+    } else {
+      resBookingStatus.className = 'badge badge--red';
+      resBookingStatus.textContent = 'Disabled (ER Only)';
+      redActions.classList.remove('hidden');
+      proceedActions.classList.add('hidden');
+    }
   }
 
   function renderSlots() {
     slotsGrid.innerHTML = '';
     const priority = state.triage ? state.triage.priority : 'GREEN';
+    const meta = PRIORITY_META[priority] || PRIORITY_META.GREEN;
 
-    const visible = CLINICIAN_SLOTS.filter((slot) =>
-      state.selectedModality === 'all' ? true : slot.modality === state.selectedModality
+    bookingPriorityBadge.className = `badge ${meta.badgeClass}`;
+    bookingPriorityBadge.textContent = `${priority} Priority`;
+    bookingSubtitle.textContent =
+      priority === 'YELLOW'
+        ? 'Priority slots within 2 hours are highlighted first for urgent care.'
+        : 'Select any available video, low-bandwidth audio, or SMS/chat appointment slot.';
+
+    const filtered = SLOTS.filter((s) =>
+      state.modality === 'all' ? true : s.modality === state.modality
     ).sort((a, b) => {
-      const aBooked = isSlotBooked(a);
-      const bBooked = isSlotBooked(b);
-      if (aBooked !== bBooked) return aBooked ? 1 : -1;
-      const aRec = a.priorityMatch.includes(priority);
-      const bRec = b.priorityMatch.includes(priority);
-      if (aRec !== bRec) return aRec ? -1 : 1;
+      const ab = isSlotBooked(a);
+      const bb = isSlotBooked(b);
+      if (ab !== bb) return ab ? 1 : -1;
+      const ar = a.priorityMatch.includes(priority);
+      const br = b.priorityMatch.includes(priority);
+      if (ar !== br) return ar ? -1 : 1;
       return 0;
     });
 
-    if (visible.length === 0) {
-      const emptyMsg = document.createElement('p');
-      emptyMsg.className = 'card__desc';
-      emptyMsg.textContent = 'No consultation slots match this modality filter.';
-      slotsGrid.appendChild(emptyMsg);
-      return;
-    }
-
-    visible.forEach((slot) => {
+    filtered.forEach((slot) => {
       const booked = isSlotBooked(slot);
-      const recommended = slot.priorityMatch.includes(priority);
+      const priorityMatch = slot.priorityMatch.includes(priority);
 
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'slot-card';
       btn.disabled = booked;
-      btn.setAttribute('aria-pressed', String(state.selectedSlotLabel === slot.label));
+      btn.setAttribute('aria-pressed', String(state.selectedSlot === slot.label));
 
-      const topRow = document.createElement('div');
-      topRow.className = 'slot-card__top';
+      const top = document.createElement('div');
+      top.className = 'slot-card__top';
 
-      const docTitle = document.createElement('p');
-      docTitle.className = 'slot-card__doc';
-      docTitle.textContent = slot.clinician;
+      const timeEl = document.createElement('span');
+      timeEl.className = 'slot-card__time';
+      timeEl.textContent = slot.time;
 
-      const statusBadge = document.createElement('span');
+      const badge = document.createElement('span');
       if (booked) {
-        statusBadge.className = 'badge badge--neutral';
-        statusBadge.textContent = 'Booked';
-      } else if (recommended) {
-        statusBadge.className = 'badge badge--accent';
-        statusBadge.textContent = 'Priority Match';
+        badge.className = 'badge badge--neutral';
+        badge.textContent = 'Booked';
+      } else if (priorityMatch) {
+        badge.className = 'badge badge--accent';
+        badge.textContent = 'Priority Match';
       } else {
-        statusBadge.className = 'badge badge--standard';
-        statusBadge.textContent = 'Available';
+        badge.className = 'badge badge--green';
+        badge.textContent = 'Available';
       }
 
-      topRow.append(docTitle, statusBadge);
+      top.append(timeEl, badge);
 
-      const meta = document.createElement('p');
-      meta.className = 'slot-card__meta';
-      meta.textContent = slot.specialty;
+      const metaEl = document.createElement('span');
+      metaEl.className = 'slot-card__meta';
+      metaEl.textContent = `${slot.clinician} · ${slot.modality.toUpperCase()}`;
 
-      const footer = document.createElement('div');
-      footer.className = 'slot-card__footer';
-
-      const timeSpan = document.createElement('span');
-      timeSpan.textContent = slot.time;
-
-      const modalitySpan = document.createElement('span');
-      modalitySpan.className = 'badge badge--neutral';
-      modalitySpan.textContent = slot.modality.toUpperCase();
-
-      footer.append(timeSpan, modalitySpan);
-      btn.append(topRow, meta, footer);
+      btn.append(top, metaEl);
 
       if (!booked) {
         btn.addEventListener('click', () => {
-          state.selectedSlotLabel = slot.label;
-          clearAlert(bookingError);
+          state.selectedSlot = slot.label;
+          clearError(bookingError);
           renderSlots();
-          updateBookingButtonState();
+          confirmBookingBtn.disabled = false;
+          selectedSlotHint.textContent = `Selected: ${slot.label}`;
         });
       }
 
       slotsGrid.appendChild(btn);
     });
+
+    if (!state.selectedSlot || SLOTS.some((s) => s.label === state.selectedSlot && isSlotBooked(s))) {
+      state.selectedSlot = null;
+      confirmBookingBtn.disabled = true;
+      selectedSlotHint.textContent = 'Tap an available time slot above to confirm your booking.';
+    }
   }
 
-  function renderBookingReceipt(booking) {
+  function renderReceipt(booking) {
+    const meta = PRIORITY_META[booking.priority] || PRIORITY_META.GREEN;
     receiptCard.classList.remove('hidden');
-    receiptDetails.innerHTML = '';
-
-    const entries = [
-      ['Booking ID', booking.id],
-      ['Status', booking.status],
-      ['Patient', booking.patientName],
-      ['Phone', booking.phone],
-      ['Priority', booking.priority],
-      ['Consultation Slot', booking.slot]
-    ];
-
-    entries.forEach(([label, value]) => {
-      const box = document.createElement('div');
-      box.className = 'receipt-item';
-
-      const labelEl = document.createElement('span');
-      labelEl.className = 'receipt-item__label';
-      labelEl.textContent = label;
-
-      const valueEl = document.createElement('span');
-      valueEl.className = 'receipt-item__value';
-      valueEl.textContent = value;
-
-      box.append(labelEl, valueEl);
-      receiptDetails.appendChild(box);
-    });
+    receiptIdBadge.textContent = booking.id;
+    rcptPatient.textContent = booking.patientName;
+    rcptPriority.className = `badge ${meta.badgeClass}`;
+    rcptPriority.textContent = booking.priority;
+    rcptSlot.textContent = booking.slot;
+    rcptStatus.textContent = booking.status;
+    rcptPhone.textContent = booking.phone;
   }
 
-  function renderClinicQueue() {
+  function renderQueue() {
     queueCountBadge.textContent = `${state.bookings.length} Booked`;
     queueList.innerHTML = '';
 
     if (state.bookings.length === 0) {
       const li = document.createElement('li');
-      li.className = 'factor-list__item';
-      const msg = document.createElement('span');
-      msg.textContent = 'No appointments booked yet.';
+      li.className = 'queue-item';
+      const label = document.createElement('span');
+      label.textContent = 'No appointments booked yet.';
       const dash = document.createElement('span');
-      dash.className = 'factor-list__impact';
+      dash.className = 'mono';
       dash.textContent = '—';
-      li.append(msg, dash);
+      li.append(label, dash);
       queueList.appendChild(li);
       return;
     }
 
     state.bookings.slice().reverse().forEach((b) => {
       const li = document.createElement('li');
-      li.className = 'factor-list__item';
-
+      li.className = 'queue-item';
       const info = document.createElement('span');
-      info.textContent = `${b.patientName} · ${b.slot}`;
-
+      info.textContent = `${b.id} · ${b.patientName} (${b.slot})`;
       const badge = document.createElement('span');
-      const style = PRIORITY_STYLE[b.priority] || PRIORITY_STYLE.GREEN;
-      badge.className = `badge badge--${style.classSuffix}`;
+      const meta = PRIORITY_META[b.priority] || PRIORITY_META.GREEN;
+      badge.className = `badge ${meta.badgeClass}`;
       badge.textContent = b.priority;
-
       li.append(info, badge);
       queueList.appendChild(li);
     });
   }
 
-  async function refreshBookings() {
+  async function refreshQueue() {
     try {
       const res = await fetch('/api/bookings');
       if (!res.ok) return;
       const data = await res.json();
       state.bookings = data.bookings || [];
-      renderClinicQueue();
-      if (state.triage && state.triage.allowOnlineBooking) {
-        renderSlots();
-        updateBookingButtonState();
-      }
+      renderQueue();
+      if (state.step === 3) renderSlots();
     } catch {
-      // Non-fatal background sync error
+      // Allow graceful offline resilience
     }
   }
 
-  // Handle Step 1: Triage Submission
+  // Quick-select symptom chip handlers
+  symptomChips.forEach((chip) => {
+    chip.addEventListener('click', () => {
+      const next = chip.getAttribute('aria-pressed') !== 'true';
+      chip.setAttribute('aria-pressed', String(next));
+      clearError(intakeError);
+      updateChipCount();
+    });
+  });
+
+  // View 1 -> POST /api/triage
   triageForm.addEventListener('submit', async (event) => {
     event.preventDefault();
-    clearAlert(triageError);
-    clearAlert(bookingError);
+    clearError(intakeError);
 
-    const formData = new FormData(triageForm);
-    const patientName = String(formData.get('patientName') || '').trim();
-    const checkedSymptoms = formData.getAll('symptoms').map(String);
-    const notes = String(formData.get('notes') || '').trim();
-    const symptoms = notes ? [...checkedSymptoms, notes] : [...checkedSymptoms];
+    const patientName = patientNameInput.value.trim();
+    const phone = patientPhoneInput.value.trim();
+    const selected = getSelectedChipSymptoms();
+    const extra = extraNotesInput.value.trim();
+    const symptoms = extra ? [...selected, extra] : selected;
 
-    if (!patientName) {
-      showAlert(triageError, 'Please enter the patient full name.');
+    if (patientName.length < 2) {
+      showError(intakeError, 'Please enter the patient full name.');
       return;
     }
-
+    if (phone.length < 7) {
+      showError(intakeError, 'Please enter a valid mobile number for your SMS receipt.');
+      return;
+    }
     if (symptoms.length === 0) {
-      showAlert(triageError, 'Please select at least one symptom or enter notes before evaluating triage.');
+      showError(intakeError, 'Please select at least one symptom chip or enter notes.');
       return;
     }
 
-    triageSubmitBtn.disabled = true;
-    triageSubmitBtn.textContent = 'Evaluating Symptoms...';
+    checkUrgencyBtn.disabled = true;
+    checkUrgencyBtn.textContent = 'Checking Urgency...';
 
     try {
-      const response = await fetch('/api/triage', {
+      const res = await fetch('/api/triage', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ patientName, symptoms })
       });
-
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || 'Unable to evaluate triage.');
-      }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not evaluate symptoms.');
 
       state.triage = data;
-      state.evaluatedSymptoms = symptoms;
-      state.selectedSlotLabel = null;
+      state.phone = phone;
+      state.symptoms = symptoms;
+      state.selectedSlot = null;
 
-      renderTriageResult(data);
-      bookingLockedBanner.classList.add('hidden');
-
-      if (!data.allowOnlineBooking) {
-        updateStepper(2);
-        bookingEmergencyBanner.classList.remove('hidden');
-        bookingControls.classList.add('hidden');
-        bookingStepBadge.className = 'badge badge--emergency';
-        bookingStepBadge.textContent = 'RED Escalation';
-        bookingSubtitle.textContent = 'Emergency symptoms detected — online booking is locked for safety.';
-      } else {
-        updateStepper(3);
-        bookingEmergencyBanner.classList.add('hidden');
-        bookingControls.classList.remove('hidden');
-        bookingStepBadge.className =
-          data.priority === 'YELLOW' ? 'badge badge--urgent' : 'badge badge--standard';
-        bookingStepBadge.textContent = `${data.priority} Priority`;
-        bookingSubtitle.textContent =
-          data.priority === 'YELLOW'
-            ? 'Urgent priority unlocked — same-day teleconsultation slots within 2 hours are highlighted.'
-            : 'Routine booking unlocked — choose any convenient consultation slot below.';
-        renderSlots();
-        updateBookingButtonState();
-      }
+      renderResultView();
+      setActiveStep(2);
     } catch (err) {
-      showAlert(triageError, err.message);
+      showError(intakeError, err.message);
     } finally {
-      triageSubmitBtn.disabled = false;
-      triageSubmitBtn.textContent = 'Evaluate Triage Priority';
+      checkUrgencyBtn.disabled = false;
+      checkUrgencyBtn.textContent = 'Check Urgency';
     }
   });
 
-  // Handle Reset Assessment
-  triageResetBtn.addEventListener('click', () => {
+  resetTriageBtn.addEventListener('click', () => {
     triageForm.reset();
-    clearAlert(triageError);
-    clearAlert(bookingError);
-
+    symptomChips.forEach((c) => c.setAttribute('aria-pressed', 'false'));
+    updateChipCount();
+    clearError(intakeError);
+    clearError(bookingError);
     state.triage = null;
-    state.evaluatedSymptoms = [];
-    state.selectedSlotLabel = null;
-    state.selectedModality = 'all';
-
-    updateStepper(1);
-    resultTierBadge.className = 'badge badge--neutral';
-    resultTierBadge.textContent = 'Pending';
-    triageEmptyState.classList.remove('hidden');
-    triageResultPanel.classList.add('hidden');
-
-    bookingLockedBanner.classList.remove('hidden');
-    bookingEmergencyBanner.classList.add('hidden');
-    bookingControls.classList.add('hidden');
-    bookingStepBadge.className = 'badge badge--neutral';
-    bookingStepBadge.textContent = 'Awaiting Triage';
-    bookingSubtitle.textContent =
-      'Complete Step 1 triage first to unlock slot selection and appointment confirmation.';
-
-    filterTabs.forEach((tab) => {
-      tab.setAttribute('aria-selected', String(tab.dataset.modality === 'all'));
-    });
-
-    updateBookingButtonState();
+    state.phone = '';
+    state.symptoms = [];
+    state.selectedSlot = null;
+    setActiveStep(1);
   });
 
-  // Handle Modality Filter Tabs
+  // Step navigation
+  navStep1.addEventListener('click', () => setActiveStep(1));
+  navStep2.addEventListener('click', () => { if (state.triage) setActiveStep(2); });
+  navStep3.addEventListener('click', () => {
+    if (state.triage && state.triage.allowOnlineBooking) {
+      renderSlots();
+      setActiveStep(3);
+    }
+  });
+
+  editIntakeBtn.addEventListener('click', () => setActiveStep(1));
+  backToResultBtn.addEventListener('click', () => setActiveStep(2));
+  goToBookingBtn.addEventListener('click', () => {
+    renderSlots();
+    setActiveStep(3);
+  });
+
+  // Modality filter tabs
   filterTabs.forEach((tab) => {
     tab.addEventListener('click', () => {
-      state.selectedModality = tab.dataset.modality || 'all';
-      filterTabs.forEach((t) => {
-        t.setAttribute('aria-selected', String(t === tab));
-      });
+      state.modality = tab.dataset.modality || 'all';
+      filterTabs.forEach((t) => t.setAttribute('aria-selected', String(t === tab)));
       renderSlots();
     });
   });
 
-  patientPhoneInput.addEventListener('input', updateBookingButtonState);
-
-  // Handle Booking Submission (POST /api/bookings)
-  bookingForm.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    clearAlert(bookingError);
-
-    if (!state.triage || !state.selectedSlotLabel) {
-      showAlert(bookingError, 'Please select an available consultation slot first.');
-      return;
-    }
+  // View 3 -> POST /api/bookings
+  confirmBookingBtn.addEventListener('click', async () => {
+    clearError(bookingError);
+    if (!state.triage || !state.triage.allowOnlineBooking || !state.selectedSlot) return;
 
     confirmBookingBtn.disabled = true;
-    confirmBookingBtn.textContent = 'Confirming Booking...';
+    confirmBookingBtn.textContent = 'Confirming...';
 
     try {
-      const response = await fetch('/api/bookings', {
+      const res = await fetch('/api/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           patientName: state.triage.patientName,
-          phone: patientPhoneInput.value.trim(),
+          phone: state.phone,
           priority: state.triage.priority,
-          slot: state.selectedSlotLabel
+          slot: state.selectedSlot
         })
       });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not confirm booking.');
 
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || 'Could not confirm your appointment.');
-      }
-
-      renderBookingReceipt(data.booking);
-      state.selectedSlotLabel = null;
-      bookingForm.reset();
-      await refreshBookings();
+      renderReceipt(data.booking);
+      state.selectedSlot = null;
+      await refreshQueue();
     } catch (err) {
-      showAlert(bookingError, err.message);
+      showError(bookingError, err.message);
     } finally {
-      confirmBookingBtn.textContent = 'Confirm Consultation Slot';
-      updateBookingButtonState();
+      confirmBookingBtn.textContent = 'Confirm Appointment';
+      confirmBookingBtn.disabled = !state.selectedSlot;
     }
   });
 
-  updateStepper(1);
-  refreshBookings();
+  updateChipCount();
+  setActiveStep(1);
+  refreshQueue();
 })();

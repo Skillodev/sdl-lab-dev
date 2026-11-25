@@ -11,8 +11,8 @@
 
     <div class="emergency-strip" role="region" aria-label="Emergency notice">
       <div class="container emergency-strip__inner">
-        <span>Experiencing chest pain, difficulty breathing, severe bleeding, or stroke symptoms? Call 911 / 112 immediately.</span>
-        <span class="badge badge--emergency">RED / YELLOW / GREEN Triage</span>
+        <span>Chest pain, difficulty breathing, severe bleeding, or stroke signs? Call 911 / 112 immediately.</span>
+        <span class="badge badge--red">24/7 Clinical Triage</span>
       </div>
     </div>
 
@@ -22,306 +22,260 @@
           <div class="brand__mark" aria-hidden="true">+</div>
           <div>
             <h1 class="brand__title">MedBridge Telemedicine Hub</h1>
-            <p class="brand__subtitle">Clinical Red-Flag Triage &amp; Same-Day Patient Booking</p>
+            <p class="brand__subtitle">Low-Bandwidth Symptom Triage &amp; Patient Booking</p>
           </div>
         </div>
 
-        <ol class="stepper" aria-label="Booking workflow steps">
-          <li id="step-1" class="stepper__item is-current">
-            <span class="stepper__num">1</span>
-            <span>Triage</span>
-          </li>
-          <li id="step-2" class="stepper__item">
-            <span class="stepper__num">2</span>
-            <span>Priority</span>
-          </li>
-          <li id="step-3" class="stepper__item">
-            <span class="stepper__num">3</span>
-            <span>Book Slot</span>
-          </li>
-        </ol>
+        <nav class="stepper" aria-label="3-screen triage and booking flow">
+          <button id="nav-step-1" type="button" class="step-btn" aria-current="step">
+            1. Intake
+          </button>
+          <button id="nav-step-2" type="button" class="step-btn" disabled>
+            2. Result
+          </button>
+          <button id="nav-step-3" type="button" class="step-btn" disabled>
+            3. Book Slot
+          </button>
+        </nav>
       </div>
     </header>
 
     <main id="main-content" class="workspace">
-      <div class="container workspace-grid">
-        <!-- Left 7-Column Primary Workflow -->
-        <div class="primary-column">
-          <!-- Step 1: Triage Assessment Form -->
-          <section class="card" aria-labelledby="triage-heading">
+      <div class="container app-layout">
+        <!-- Primary 3-Screen Mobile-First Workflow -->
+        <div class="screen-stack">
+          <!-- ==============================================================
+               VIEW 1: SYMPTOM TRIAGE INTAKE
+               ============================================================== -->
+          <section id="view-intake" class="card" aria-labelledby="intake-heading">
             <div class="card__header">
               <div>
-                <h2 id="triage-heading" class="card__title">1. Clinical Symptom Triage</h2>
+                <h2 id="intake-heading" class="card__title">1. Symptom Triage Intake</h2>
                 <p class="card__desc">
-                  Enter your name and select or describe your symptoms to determine your priority level (RED, YELLOW, or GREEN).
+                  Enter your details and tap any symptoms you are experiencing for instant traffic-light urgency screening.
                 </p>
               </div>
               <span class="badge badge--accent">Step 1 of 3</span>
             </div>
 
-            <div id="triage-error" class="alert alert--error hidden" role="alert" aria-live="assertive"></div>
+            <div id="intake-error" class="alert alert--error hidden" role="alert" aria-live="assertive"></div>
 
             <form id="triage-form" class="form-stack" novalidate>
-              <!-- Patient Name -->
-              <div class="field">
-                <label class="field__label" for="patientName">
-                  <span>Patient Full Name <span class="field__required" aria-hidden="true">*</span></span>
-                </label>
-                <input
-                  id="patientName"
-                  name="patientName"
-                  type="text"
-                  class="form-control"
-                  placeholder="e.g. Amina Yusuf"
-                  autocomplete="name"
-                  required
-                />
-              </div>
-
-              <!-- RED Flags Checklist -->
-              <fieldset class="fieldset fieldset--emergency">
-                <legend class="fieldset__legend">RED Priority — Emergency Red-Flag Symptoms</legend>
-                <p class="fieldset__hint">
-                  Any match disables online booking and directs you to immediate in-person emergency care.
-                </p>
-                <div class="option-grid option-grid--2col">
-                  <label class="selectable-card selectable-card--danger">
-                    <input type="checkbox" name="symptoms" value="chest pain" />
-                    <span>Chest pain</span>
+              <div class="form-grid form-grid--2col">
+                <div class="field">
+                  <label class="field__label" for="patientName">
+                    <span>Patient Full Name *</span>
                   </label>
-                  <label class="selectable-card selectable-card--danger">
-                    <input type="checkbox" name="symptoms" value="difficulty breathing" />
-                    <span>Difficulty breathing</span>
-                  </label>
-                  <label class="selectable-card selectable-card--danger">
-                    <input type="checkbox" name="symptoms" value="severe bleeding" />
-                    <span>Severe bleeding</span>
-                  </label>
-                  <label class="selectable-card selectable-card--danger">
-                    <input type="checkbox" name="symptoms" value="unconscious" />
-                    <span>Unconscious / fainting</span>
-                  </label>
-                  <label class="selectable-card selectable-card--danger">
-                    <input type="checkbox" name="symptoms" value="stroke" />
-                    <span>Stroke signs (face droop / slurred speech)</span>
-                  </label>
+                  <input
+                    id="patientName"
+                    name="patientName"
+                    type="text"
+                    class="form-control"
+                    placeholder="e.g. Amina Yusuf"
+                    autocomplete="name"
+                    required
+                  />
                 </div>
-              </fieldset>
 
-              <!-- YELLOW Flags Checklist -->
-              <fieldset class="fieldset">
-                <legend class="fieldset__legend">YELLOW Priority — Urgent Symptoms (Within 2 Hours)</legend>
-                <p class="fieldset__hint">
-                  Matches prioritize same-day teleconsultation slots within 2 hours.
-                </p>
-                <div class="option-grid option-grid--2col">
-                  <label class="selectable-card">
-                    <input type="checkbox" name="symptoms" value="high fever" />
-                    <span>High fever</span>
-                  </label>
-                  <label class="selectable-card">
-                    <input type="checkbox" name="symptoms" value="persistent vomiting" />
-                    <span>Persistent vomiting</span>
-                  </label>
-                  <label class="selectable-card">
-                    <input type="checkbox" name="symptoms" value="severe headache" />
-                    <span>Severe headache</span>
-                  </label>
-                  <label class="selectable-card">
-                    <input type="checkbox" name="symptoms" value="migraine" />
-                    <span>Migraine</span>
-                  </label>
-                  <label class="selectable-card">
-                    <input type="checkbox" name="symptoms" value="infection" />
-                    <span>Suspected infection</span>
-                  </label>
-                </div>
-              </fieldset>
-
-              <!-- GREEN Routine Symptoms -->
-              <fieldset class="fieldset">
-                <legend class="fieldset__legend">GREEN Priority — Routine Concerns</legend>
-                <div class="option-grid option-grid--2col">
-                  <label class="selectable-card">
-                    <input type="checkbox" name="symptoms" value="mild cough" />
-                    <span>Mild cough or sore throat</span>
-                  </label>
-                  <label class="selectable-card">
-                    <input type="checkbox" name="symptoms" value="skin rash" />
-                    <span>Mild skin rash or irritation</span>
-                  </label>
-                  <label class="selectable-card">
-                    <input type="checkbox" name="symptoms" value="back or joint ache" />
-                    <span>Back or joint ache</span>
-                  </label>
-                  <label class="selectable-card">
-                    <input type="checkbox" name="symptoms" value="prescription refill" />
-                    <span>Prescription refill or follow-up</span>
-                  </label>
-                </div>
-              </fieldset>
-
-              <!-- Additional Symptoms / Notes -->
-              <div class="field">
-                <label class="field__label" for="notes">
-                  <span>Other Symptoms (Optional)</span>
-                  <span class="field__hint">Included in symptoms[] sent to /api/triage</span>
-                </label>
-                <textarea
-                  id="notes"
-                  name="notes"
-                  class="form-control"
-                  placeholder="Describe any additional symptoms (e.g., high fever, migraine, mild allergy)..."
-                ></textarea>
-              </div>
-
-              <div class="btn-row">
-                <button id="triage-submit-btn" type="submit" class="btn btn-primary">
-                  Evaluate Triage Priority
-                </button>
-                <button id="triage-reset-btn" type="button" class="btn btn-secondary">
-                  Reset Assessment
-                </button>
-              </div>
-            </form>
-          </section>
-
-          <!-- Step 3: Clinician Slot Selection & Booking -->
-          <section id="booking-section" class="card" aria-labelledby="booking-heading">
-            <div class="card__header">
-              <div>
-                <h2 id="booking-heading" class="card__title">2. Select Clinician &amp; Consultation Slot</h2>
-                <p id="booking-subtitle" class="card__desc">
-                  Complete Step 1 triage first to unlock slot selection and appointment confirmation.
-                </p>
-              </div>
-              <span id="booking-step-badge" class="badge badge--neutral">Awaiting Triage</span>
-            </div>
-
-            <div id="booking-locked-banner" class="alert alert--routine" role="status">
-              <p class="alert__title">Triage required before booking</p>
-              <p>Submit your symptom assessment above to unlock YELLOW priority or GREEN routine slots.</p>
-            </div>
-
-            <div id="booking-emergency-banner" class="alert alert--emergency hidden" role="alert">
-              <p class="alert__title">Online Booking Disabled — RED Priority Emergency</p>
-              <p>
-                Emergency — Seek immediate in-person care or call emergency services (<strong>911 / 112</strong>).
-                Routine telehealth slot booking is locked for patient safety.
-              </p>
-            </div>
-
-            <div id="booking-controls" class="hidden">
-              <!-- Modality Filter Tabs -->
-              <div class="filter-tabs" role="tablist" aria-label="Filter by consultation modality">
-                <button type="button" class="filter-tab" role="tab" data-modality="all" aria-selected="true">
-                  All Modalities
-                </button>
-                <button type="button" class="filter-tab" role="tab" data-modality="video" aria-selected="false">
-                  Video Visit
-                </button>
-                <button type="button" class="filter-tab" role="tab" data-modality="audio" aria-selected="false">
-                  Audio Call
-                </button>
-                <button type="button" class="filter-tab" role="tab" data-modality="chat" aria-selected="false">
-                  Clinical Chat
-                </button>
-              </div>
-
-              <!-- Consultation Slot Cards Grid -->
-              <div id="slots-grid" class="slots-grid" aria-live="polite"></div>
-
-              <!-- Booking Confirmation Form -->
-              <div id="booking-error" class="alert alert--error hidden" role="alert" aria-live="assertive"></div>
-
-              <form id="booking-form" class="form-stack" novalidate>
                 <div class="field">
                   <label class="field__label" for="patientPhone">
-                    <span>Contact Phone Number <span class="field__required" aria-hidden="true">*</span></span>
+                    <span>Phone Number (SMS Receipt) *</span>
                   </label>
                   <input
                     id="patientPhone"
                     name="phone"
                     type="tel"
                     class="form-control"
-                    placeholder="+234 800 000 0000"
+                    placeholder="+234 803 000 0000"
                     autocomplete="tel"
                     required
                   />
                 </div>
+              </div>
 
-                <div class="btn-row">
-                  <button id="confirm-booking-btn" type="submit" class="btn btn-primary" disabled>
-                    Confirm Consultation Slot
-                  </button>
-                  <span id="selected-slot-hint" class="field__hint">Select an available slot above to enable booking.</span>
+              <div class="field">
+                <div class="field__label">
+                  <span>Quick-Select Symptoms *</span>
+                  <span id="selected-count" class="field__hint">0 selected</span>
                 </div>
-              </form>
-            </div>
-          </section>
-        </div>
+                <div id="symptom-chips" class="chip-group" role="group" aria-label="Quick-select symptom chips">
+                  <button type="button" class="symptom-chip" data-symptom="chest pain" data-tier="RED" aria-pressed="false">Chest Pain</button>
+                  <button type="button" class="symptom-chip" data-symptom="difficulty breathing" data-tier="RED" aria-pressed="false">Difficulty Breathing</button>
+                  <button type="button" class="symptom-chip" data-symptom="severe bleeding" data-tier="RED" aria-pressed="false">Severe Bleeding</button>
+                  <button type="button" class="symptom-chip" data-symptom="unconscious" data-tier="RED" aria-pressed="false">Unconscious</button>
+                  <button type="button" class="symptom-chip" data-symptom="stroke" data-tier="RED" aria-pressed="false">Stroke Signs</button>
+                  <button type="button" class="symptom-chip" data-symptom="high fever" data-tier="YELLOW" aria-pressed="false">High Fever</button>
+                  <button type="button" class="symptom-chip" data-symptom="persistent vomiting" data-tier="YELLOW" aria-pressed="false">Persistent Vomiting</button>
+                  <button type="button" class="symptom-chip" data-symptom="severe headache" data-tier="YELLOW" aria-pressed="false">Severe Headache</button>
+                  <button type="button" class="symptom-chip" data-symptom="migraine" data-tier="YELLOW" aria-pressed="false">Migraine</button>
+                  <button type="button" class="symptom-chip" data-symptom="infection" data-tier="YELLOW" aria-pressed="false">Infection</button>
+                  <button type="button" class="symptom-chip" data-symptom="mild cough" data-tier="GREEN" aria-pressed="false">Mild Cough</button>
+                  <button type="button" class="symptom-chip" data-symptom="routine checkup" data-tier="GREEN" aria-pressed="false">Routine Checkup</button>
+                </div>
+              </div>
 
-        <!-- Right 5-Column Sticky Assessment, Receipt & Live Clinic Queue -->
-        <aside class="sidebar-column" aria-label="Triage outcome and clinic queue">
-          <!-- Triage Outcome Card -->
-          <section class="card" aria-labelledby="result-heading">
+              <div class="field">
+                <label class="field__label" for="extraNotes">
+                  <span>Other Symptoms (Optional)</span>
+                  <span class="field__hint">Checked automatically for urgency flags</span>
+                </label>
+                <textarea
+                  id="extraNotes"
+                  name="notes"
+                  class="form-control"
+                  placeholder="Describe any other symptoms or duration..."
+                ></textarea>
+              </div>
+
+              <div class="btn-row">
+                <button id="check-urgency-btn" type="submit" class="btn btn-primary">
+                  Check Urgency
+                </button>
+                <button id="reset-triage-btn" type="button" class="btn btn-secondary">
+                  Reset
+                </button>
+              </div>
+
+              <div class="alert alert--info">
+                Low-bandwidth friendly: works reliably on 2G/3G networks with SMS &amp; offline booking confirmation.
+              </div>
+            </form>
+          </section>
+
+          <!-- ==============================================================
+               VIEW 2: TRAFFIC-LIGHT TRIAGE RESULT
+               ============================================================== -->
+          <section id="view-result" class="card hidden" aria-labelledby="result-heading" aria-live="polite">
             <div class="card__header">
               <div>
-                <h2 id="result-heading" class="card__title">Triage Outcome</h2>
-                <p class="card__desc">Real-time RED / YELLOW / GREEN priority result</p>
+                <h2 id="result-heading" class="card__title">2. Traffic-Light Triage Result</h2>
+                <p class="card__desc">Urgency classification from clinical red-flag screening.</p>
               </div>
               <span id="result-tier-badge" class="badge badge--neutral">Pending</span>
             </div>
 
-            <div id="triage-empty-state">
-              <p class="card__desc">
-                Symptoms are screened against RED emergency flags first, then YELLOW urgent flags, before assigning GREEN routine care.
-              </p>
-              <ul class="tier-guide">
-                <li class="tier-guide__item">
-                  <span class="badge badge--emergency">RED</span>
-                  <span>Emergency — Immediate in-person / ER</span>
-                </li>
-                <li class="tier-guide__item">
-                  <span class="badge badge--urgent">YELLOW</span>
-                  <span>Urgent — Priority telehealth &lt; 2 hrs</span>
-                </li>
-                <li class="tier-guide__item">
-                  <span class="badge badge--standard">GREEN</span>
-                  <span>Routine — Standard booking available</span>
-                </li>
-              </ul>
+            <div id="result-banner" class="traffic-banner traffic-banner--green">
+              <div class="traffic-banner__top">
+                <span id="result-pill" class="badge badge--green">GREEN · ROUTINE</span>
+                <span id="result-window" class="mono">Standard Appointment</span>
+              </div>
+              <h3 id="result-title" class="traffic-banner__title"></h3>
+              <p id="result-action" class="traffic-banner__body"></p>
             </div>
 
-            <div id="triage-result-panel" class="hidden" aria-live="polite">
-              <div id="triage-alert-box" class="alert">
-                <p id="triage-action-title" class="alert__title"></p>
-                <p id="triage-action-body"></p>
+            <div class="summary-box">
+              <div class="summary-row">
+                <span>Patient</span>
+                <strong id="res-patient">—</strong>
               </div>
-
-              <div class="score-meter">
-                <div class="score-meter__row">
-                  <span class="field__label">Online Booking Status</span>
-                  <span id="triage-booking-status" class="badge badge--neutral">—</span>
-                </div>
-                <p id="triage-ref-text" class="field__hint" style="margin-top: 8px;"></p>
+              <div class="summary-row">
+                <span>SMS Contact</span>
+                <strong id="res-phone" class="mono">—</strong>
               </div>
+              <div class="summary-row">
+                <span>Reported Symptoms</span>
+                <strong id="res-symptoms">—</strong>
+              </div>
+              <div class="summary-row">
+                <span>Online Booking</span>
+                <span id="res-booking-status" class="badge badge--green">Enabled</span>
+              </div>
+            </div>
 
-              <h3 class="field__label" style="margin: 16px 0 0;">Evaluated Symptoms</h3>
-              <ul id="triage-symptoms-list" class="factor-list"></ul>
+            <div id="red-actions" class="form-stack hidden" style="margin-top: 16px;">
+              <a href="tel:112" class="btn btn-danger btn--full">Call Emergency Services (911 / 112)</a>
+              <button type="button" class="btn btn-primary btn--full" disabled>
+                Online Booking Disabled (RED Emergency)
+              </button>
+            </div>
+
+            <div id="proceed-actions" class="btn-row" style="margin-top: 16px;">
+              <button id="go-to-booking-btn" type="button" class="btn btn-primary">
+                Select Appointment Slot &rarr;
+              </button>
+              <button id="edit-intake-btn" type="button" class="btn btn-secondary">
+                &larr; Edit Symptoms
+              </button>
+            </div>
+
+            <div class="traffic-legend" aria-label="Traffic-light priority key">
+              <div class="legend-tile legend-tile--red">RED · Emergency</div>
+              <div class="legend-tile legend-tile--yellow">YELLOW · &lt; 2 hrs</div>
+              <div class="legend-tile legend-tile--green">GREEN · Routine</div>
             </div>
           </section>
 
-          <!-- Confirmed Booking Receipt Card -->
-          <section id="receipt-card" class="card hidden" aria-labelledby="receipt-heading" aria-live="polite">
+          <!-- ==============================================================
+               VIEW 3: APPOINTMENT SLOT BOOKING & CONFIRMATION
+               ============================================================== -->
+          <section id="view-booking" class="card hidden" aria-labelledby="booking-heading">
             <div class="card__header">
               <div>
-                <h2 id="receipt-heading" class="card__title">Appointment Confirmed</h2>
-                <p class="card__desc">Latest confirmed patient booking</p>
+                <h2 id="booking-heading" class="card__title">3. Appointment Slot Booking</h2>
+                <p id="booking-subtitle" class="card__desc">
+                  Choose an available clinician date &amp; time slot to receive your SMS confirmation receipt.
+                </p>
               </div>
-              <span class="badge badge--standard">Confirmed</span>
+              <span id="booking-priority-badge" class="badge badge--accent">Step 3 of 3</span>
             </div>
-            <div id="receipt-details" class="receipt-grid"></div>
+
+            <div id="booking-error" class="alert alert--error hidden" role="alert" aria-live="assertive"></div>
+
+            <div class="filter-tabs" role="tablist" aria-label="Filter slots by visit type">
+              <button type="button" class="filter-tab" role="tab" data-modality="all" aria-selected="true">All</button>
+              <button type="button" class="filter-tab" role="tab" data-modality="video" aria-selected="false">Video</button>
+              <button type="button" class="filter-tab" role="tab" data-modality="audio" aria-selected="false">Low-BW Audio</button>
+              <button type="button" class="filter-tab" role="tab" data-modality="chat" aria-selected="false">SMS / Chat</button>
+            </div>
+
+            <div id="slots-grid" class="slots-grid" aria-live="polite"></div>
+
+            <div class="btn-row">
+              <button id="confirm-booking-btn" type="button" class="btn btn-primary" disabled>
+                Confirm Appointment
+              </button>
+              <button id="back-to-result-btn" type="button" class="btn btn-secondary">
+                &larr; Back to Result
+              </button>
+            </div>
+            <p id="selected-slot-hint" class="field__hint" style="margin-top: 8px;">
+              Tap an available time slot above to confirm your booking.
+            </p>
+          </section>
+        </div>
+
+        <!-- Secondary Sidebar: Confirmed Receipt & Live Clinic Queue -->
+        <aside class="screen-stack" aria-label="Booking confirmation receipt and clinic queue">
+          <!-- Confirmed Booking Receipt -->
+          <section id="receipt-card" class="receipt-card hidden" aria-labelledby="receipt-heading" aria-live="polite">
+            <div class="traffic-banner__top">
+              <h2 id="receipt-heading" class="card__title" style="color: #065F46;">Appointment Confirmed</h2>
+              <span id="receipt-id-badge" class="badge badge--green mono">BK-1042</span>
+            </div>
+
+            <div class="summary-box" style="margin-top: 0; background-color: #FFFFFF;">
+              <div class="summary-row">
+                <span>Patient</span>
+                <strong id="rcpt-patient">—</strong>
+              </div>
+              <div class="summary-row">
+                <span>Priority</span>
+                <span id="rcpt-priority" class="badge badge--yellow">YELLOW</span>
+              </div>
+              <div class="summary-row">
+                <span>Selected Slot</span>
+                <strong id="rcpt-slot" style="text-align: right;">—</strong>
+              </div>
+              <div class="summary-row">
+                <span>Status</span>
+                <strong id="rcpt-status">CONFIRMED</strong>
+              </div>
+            </div>
+
+            <div class="receipt-sms-strip">
+              <span>SMS &amp; Offline Confirmation Sent</span>
+              <span id="rcpt-phone" class="mono">—</span>
+            </div>
           </section>
 
           <!-- Live Clinic Queue (GET /api/bookings) -->
@@ -329,14 +283,14 @@
             <div class="card__header">
               <div>
                 <h2 id="queue-heading" class="card__title">Clinic Booking Queue</h2>
-                <p class="card__desc">Live bookings from <code>GET /api/bookings</code></p>
+                <p class="card__desc">Live confirmed bookings synced with the clinic server.</p>
               </div>
               <span id="queue-count-badge" class="badge badge--neutral">0 Booked</span>
             </div>
-            <ul id="queue-list" class="factor-list">
-              <li class="factor-list__item">
+            <ul id="queue-list" class="queue-list">
+              <li class="queue-item">
                 <span>No appointments booked yet.</span>
-                <span class="factor-list__impact">—</span>
+                <span class="mono">—</span>
               </li>
             </ul>
           </section>
@@ -344,66 +298,40 @@
       </div>
     </main>
 
-    <!-- UI/UX Engineering Specimen Reference -->
-    <section class="specimen-section" aria-label="UI/UX Design System Specimen">
+    <!-- Design System Reference: 5 Interactive Component States -->
+    <section class="specimen-section" aria-label="Design System Reference">
       <div class="container">
-        <details class="specimen-details">
+        <p class="specimen-eyebrow">Design System Reference</p>
+        <details class="card specimen-card">
           <summary class="specimen-summary">
-            <span>UI/UX Design System Audit — 8pt Grid, 60-30-10 Palette &amp; 5 Component States</span>
+            <span>MedBridge 5-State Component Matrix — Default, Hover, Focus, Active &amp; Disabled</span>
             <span class="badge badge--neutral">Expand Audit</span>
           </summary>
-          <div class="specimen-content">
-            <div>
-              <h3 class="field__label" style="margin-bottom: 8px;">60-30-10 Color Architecture (WCAG AA Verified)</h3>
-              <div class="swatch-grid">
-                <div class="swatch">
-                  <div class="swatch__color" style="background: #F8FAFC; color: #0F172A;">60% #F8FAFC / #FFFFFF</div>
-                  <div class="swatch__info">Dominant Neutral Canvas &amp; Surfaces — #0F172A ink (17.85:1)</div>
-                </div>
-                <div class="swatch">
-                  <div class="swatch__color" style="background: #0F2942; color: #FFFFFF;">30% #0F2942 / #F1F5F9</div>
-                  <div class="swatch__info">Secondary Structural Header, Sidebars &amp; Borders (14.83:1)</div>
-                </div>
-                <div class="swatch">
-                  <div class="swatch__color" style="background: #0F766E; color: #FFFFFF;">10% #0F766E</div>
-                  <div class="swatch__info">Primary Clinical Teal CTA &amp; Active Indicators (5.47:1)</div>
-                </div>
-                <div class="swatch">
-                  <div class="swatch__color" style="background: #B91C1C; color: #FFFFFF;">RED #B91C1C</div>
-                  <div class="swatch__info">Emergency Priority Semantic Badge (6.47:1)</div>
-                </div>
-              </div>
+          <div class="state-matrix">
+            <div class="state-cell">
+              <span class="state-cell__label">1. Default</span>
+              <button type="button" class="btn btn-primary" tabindex="-1">Check Urgency</button>
+              <input type="text" class="form-control" value="Amina Yusuf" readonly tabindex="-1" aria-label="Default input" />
             </div>
-
-            <div>
-              <h3 class="field__label" style="margin-bottom: 8px;">5 Interactive Component States Reference</h3>
-              <div class="state-matrix">
-                <div class="state-cell">
-                  <span class="state-cell__label">1. Default</span>
-                  <button type="button" class="btn btn-primary" tabindex="-1">Book Slot</button>
-                  <input type="text" class="form-control" value="Default input" readonly tabindex="-1" aria-label="Default input preview" />
-                </div>
-                <div class="state-cell">
-                  <span class="state-cell__label">2. Hover</span>
-                  <button type="button" class="btn btn-primary is-hover" tabindex="-1">Book Slot</button>
-                  <input type="text" class="form-control is-hover" value="Hover input" readonly tabindex="-1" aria-label="Hover input preview" />
-                </div>
-                <div class="state-cell">
-                  <span class="state-cell__label">3. Focus (5.93:1 Ring)</span>
-                  <button type="button" class="btn btn-primary is-focus" tabindex="-1">Book Slot</button>
-                  <input type="text" class="form-control is-focus" value="Focus input" readonly tabindex="-1" aria-label="Focus input preview" />
-                </div>
-                <div class="state-cell">
-                  <span class="state-cell__label">4. Active / Pressed</span>
-                  <button type="button" class="btn btn-primary is-active" tabindex="-1">Book Slot</button>
-                  <input type="text" class="form-control is-active" value="Active input" readonly tabindex="-1" aria-label="Active input preview" />
-                </div>
-                <div class="state-cell">
-                  <span class="state-cell__label">5. Disabled</span>
-                  <button type="button" class="btn btn-primary" disabled>Slot Full</button>
-                  <input type="text" class="form-control" value="Disabled input" disabled aria-label="Disabled input preview" />
-                </div>
-              </div>
+            <div class="state-cell">
+              <span class="state-cell__label">2. Hover</span>
+              <button type="button" class="btn btn-primary is-hover" tabindex="-1">Check Urgency</button>
+              <input type="text" class="form-control is-hover" value="Amina Yusuf" readonly tabindex="-1" aria-label="Hover input" />
+            </div>
+            <div class="state-cell">
+              <span class="state-cell__label">3. Focus (5.93:1)</span>
+              <button type="button" class="btn btn-primary is-focus" tabindex="-1">Check Urgency</button>
+              <input type="text" class="form-control is-focus" value="Amina Yusuf" readonly tabindex="-1" aria-label="Focus input" />
+            </div>
+            <div class="state-cell">
+              <span class="state-cell__label">4. Active</span>
+              <button type="button" class="btn btn-primary is-active" tabindex="-1">Check Urgency</button>
+              <input type="text" class="form-control is-active" value="Amina Yusuf" readonly tabindex="-1" aria-label="Active input" />
+            </div>
+            <div class="state-cell">
+              <span class="state-cell__label">5. Disabled</span>
+              <button type="button" class="btn btn-primary" disabled>Locked (RED)</button>
+              <input type="text" class="form-control" value="Unavailable" disabled aria-label="Disabled input" />
             </div>
           </div>
         </details>
@@ -412,7 +340,7 @@
 
     <footer class="site-footer">
       <div class="container">
-        <strong>MedBridge Telemedicine Hub</strong> — Built for SDL Module 02 (8pt Spatial Grid, 60-30-10 Color System, WCAG AA Contrast). Prototype only; not a substitute for professional medical care.
+        <strong>MedBridge Telemedicine Hub</strong> — Mobile-first, low-bandwidth clinical triage &amp; booking prototype (8pt Grid, 60-30-10 Palette, WCAG AA).
       </div>
     </footer>
 
