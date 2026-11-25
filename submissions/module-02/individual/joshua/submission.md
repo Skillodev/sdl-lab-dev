@@ -12,14 +12,15 @@
 ## 1. Prototype & Pull Request Links
 
 - **Google Stitch Prototype URL:** https://stitch.google.com/projects/3165976553559818779
-- **Pull Request URL (created via `gh pr create`):** https://github.com/Skillodev/sdl-lab-dev/pull/new/feat/m02-ind-joshua
+- **Pull Request URL (created via `gh pr create`):** https://github.com/joshuabface/sdl-lab-dev/pull/1
+- **Skillodev Upstream Comparison URL:** https://github.com/Skillodev/sdl-lab-dev/compare/main...joshuabface:sdl-lab-dev:feat/m02-ind-joshua?expand=1
 
 ---
 
 ## 2. UI/UX Engineering Audit
 
 ### 8pt Spatial Grid
-- **Base Grid:** `8px` (micro-grid: `4px` for badge padding and internal alignment)
+- **Base Grid:** `8px` (micro-grid: `4px` for compact internal alignment & badge padding)
 - **Layout Columns / Gutter / Margin:**
   - Desktop (`1440px`): 12 columns, 24px gutter, 64px outer margin, 64px header height
   - Tablet (`768px`): 8 columns, 16px gutter, 32px outer margin
@@ -53,3 +54,19 @@
 2. **Page 2: Guided Issue Reporting Wizard (`guided_issue_reporting_wizard/code.html`):** Multi-step incident intake form with geo-location pin, photo upload, category tagging.
 3. **Page 3: Issue Detail & Resolution Timeline (`issue_detail_resolution_timeline/code.html`):** Dispatch crew assignment, SLA countdown, photo evidence, and audit timeline.
 4. **Page 4: Resident Dashboard & Municipal Transparency (`resident_dashboard_transparency/code.html`):** Transparency metrics, ticket resolution rate, and ward MTTR analytics.
+
+---
+
+## 4. Git Hygiene & Commit History (`git log --oneline --graph`)
+
+```text
+* eeedd09 feat(m02): add CivicPulse UI/UX design spec and submission for Joshua
+* 7fad824 docs(m02): document 5 interactive component states and submission report
+* af9a710 feat(m02): add 4-page application overview and exported Stitch assets
+* 394bbdd style(m02): define 60-30-10 color tokens and WCAG AA contrast audit table
+* f26be27 docs(m02): initialize CivicPulse project architecture and 8pt grid system for Joshua
+* 84d52a5 docs(module-02): define Partner A vs Partner B component split for group projects
+* 15f5e3a feat(module-02): deploy UI/UX & Git module, cohort pairing engine, and templates
+* cdbbf03 feat(module-01): implement compulsory Learning How to Learn benchmark and 5 simplified elective tracks
+* 2222f86 feat(cohort): scaffold Dev Lab (SDL) curriculum, Module 01 hyperparameters, and submission issue templates
+```
